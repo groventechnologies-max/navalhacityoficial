@@ -235,8 +235,9 @@ body {
 .scroll-hint {
   position: absolute;
   bottom: 36px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  transform: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -847,18 +848,103 @@ body {
 }
 
 /* ─── RESPONSIVE ─── */
-@media (max-width: 768px) {
-  .step-nav { padding: 14px 16px; }
-  .filial-content { grid-template-columns: 1fr; }
-  .filial-address { border-right: none; border-bottom: 1px solid var(--border); }
-  .filial-header { padding: 18px 20px; }
-  .filial-num { font-size: 36px; }
-  .profile-desc { grid-template-columns: 1fr; gap: 32px; }
+
+/* Tablet */
+@media (max-width: 900px) {
   .profile-photos {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 160px 160px 160px;
   }
   .profile-photos .photo-placeholder:first-child { grid-row: span 1; grid-column: span 2; }
+  .profile-desc { grid-template-columns: 1fr; gap: 32px; }
+  .barbers-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+
+  /* NAV */
+  .step-nav { padding: 12px 16px; }
+  .btn-back { font-size: 11px; letter-spacing: 1px; min-width: 60px; }
+  .nav-brand { font-size: 16px; letter-spacing: 2px; }
+  .nav-logo { width: 26px; height: 26px; }
+
+  /* HERO */
+  .hero-logo { width: 110px; height: 110px; }
+  .hero-logo-wrap { margin-bottom: 16px; }
+  .hero-badge { font-size: 9px; letter-spacing: 3px; margin-bottom: 12px; }
+  .hero-title { font-size: clamp(56px, 18vw, 90px); }
+  .hero-sub { font-size: 13px; margin-top: 16px; }
+  .hero-cta { margin-top: 32px; }
+  .btn-primary { padding: 14px 28px; font-size: 13px; }
+  .scroll-hint { font-size: 9px; letter-spacing: 2px; bottom: 24px; }
+
+  /* STEP CONTENT */
+  .step-content { padding: 32px 16px 80px; }
+  .section-title { font-size: clamp(36px, 10vw, 52px); margin-bottom: 32px; }
+  .section-label { font-size: 10px; letter-spacing: 3px; }
+
+  /* UNIDADES */
+  .filial-header { padding: 16px; }
+  .filial-num { font-size: 32px; margin-right: 16px; min-width: 40px; }
+  .filial-info h3 { font-size: 17px; }
+  .filial-info p { font-size: 12px; }
+  .filial-arrow { font-size: 14px; }
+  .filial-content { grid-template-columns: 1fr; }
+  .filial-address { padding: 20px 16px; border-right: none; border-bottom: 1px solid var(--border); }
+  .filial-address p { font-size: 14px; }
+  .filial-map { min-height: 200px; }
+  .filial-map iframe { min-height: 200px; }
+  .filial-item.open .filial-body { max-height: 700px; }
+  .btn-select { width: 100%; justify-content: center; margin-top: 20px; padding: 14px; }
+  .tag { font-size: 10px; padding: 3px 8px; }
+
+  /* PERFIL */
+  .profile-photos {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 120px 120px;
+    margin-bottom: 32px;
+  }
+  .profile-photos .photo-placeholder:nth-child(n+4) { display: none; }
+  .profile-photos .photo-placeholder:first-child { grid-row: span 1; grid-column: span 2; height: 160px; }
+  .profile-desc { grid-template-columns: 1fr; gap: 24px; margin-bottom: 40px; padding-bottom: 32px; }
+  .profile-desc-title { font-size: 36px; margin-bottom: 12px; }
+  .profile-desc-text { font-size: 14px; }
+  .stat { padding: 14px 16px; }
+  .stat-num { font-size: 36px; }
+  .stat-label { font-size: 11px; }
+
+  /* BARBEIROS */
+  .barbers-label { font-size: 10px; }
+  .barbers-title { font-size: clamp(28px, 8vw, 42px); margin-bottom: 20px; }
+  .barbers-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .barber-photo { height: 130px; font-size: 42px; }
+  .barber-info { padding: 12px 14px 16px; }
+  .barber-name { font-size: 15px; }
+  .barber-specialty { font-size: 11px; }
+
+  /* AGENDAMENTO */
+  .schedule-context { gap: 8px; margin-bottom: 28px; }
+  .context-chip { padding: 10px 14px; width: 100%; }
+  .sched-block { margin-bottom: 28px; }
+  .services-grid { grid-template-columns: 1fr; gap: 6px; }
+  .service-item { padding: 14px 16px; }
+  .service-name { font-size: 13px; }
+  .day-btn { min-width: 60px; padding: 12px 8px; }
+  .day-num { font-size: 22px; }
+  .times-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .time-btn { padding: 12px 8px; font-size: 14px; }
+  .confirm-form { padding: 20px 16px; }
   .form-row { grid-template-columns: 1fr; }
+  .form-input { padding: 14px 12px; font-size: 16px; } /* 16px evita zoom no iOS */
+  .btn-confirm { padding: 16px; font-size: 14px; letter-spacing: 2px; }
+
+  /* CONFIRMAÇÃO */
+  .confirm-screen { padding: 40px 16px; }
+  .confirm-icon { font-size: 48px; margin-bottom: 16px; }
   .confirm-title { font-size: 52px; }
+  .confirm-details { padding: 20px; font-size: 14px; line-height: 2; }
+
+  /* FOOTER */
+  .step-footer { padding: 24px 0; margin-top: 40px; }
 }

@@ -128,6 +128,27 @@ body {
   min-height: 100vh;
 }
 
+/* ─── LOGOS ─── */
+.hero-logo-wrap {
+  margin-bottom: 24px;
+}
+.hero-logo {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  border-radius: 50%;
+  opacity: 0;
+  animation: fadeUp 0.7s 0.1s forwards;
+}
+.nav-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
 /* ─── HERO ─── */
 .hero {
   min-height: 100vh;

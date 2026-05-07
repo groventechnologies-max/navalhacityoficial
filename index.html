@@ -178,6 +178,47 @@
     </div>
   </div>
 
+  <!-- MODAL DE PERFIL -->
+  <div class="login-modal-overlay" id="profileModal">
+    <div class="login-modal">
+      <button class="login-modal-close" onclick="closeProfileModal()">✕</button>
+      <div class="login-modal-logo">Navalha<span>City</span></div>
+      <h2 class="login-modal-title">Meu Perfil</h2>
+
+      <div class="login-modal-field">
+        <label>Nome completo</label>
+        <input class="form-input" type="text" id="profileNome" placeholder="Seu nome completo">
+      </div>
+      <div class="login-modal-field">
+        <label>WhatsApp</label>
+        <input class="form-input" type="tel" id="profileTel" placeholder="(11) 99999-9999" maxlength="15">
+      </div>
+
+      <div class="login-modal-field" style="margin-top:8px">
+        <label style="opacity:0.5;font-size:11px;letter-spacing:2px">ALTERAR SENHA (opcional)</label>
+      </div>
+      <div class="login-modal-field">
+        <label>Nova senha</label>
+        <div class="login-password-wrap">
+          <input class="form-input" type="password" id="profileSenha" placeholder="Nova senha (mín. 6 caracteres)">
+          <button class="login-show-pass" type="button" onclick="toggleProfileSenha()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="login-modal-field">
+        <label>Confirmar nova senha</label>
+        <input class="form-input" type="password" id="profileSenhaConfirm" placeholder="Repita a nova senha">
+      </div>
+
+      <button class="btn-confirm" id="profileSaveBtn" onclick="saveProfile()">Salvar alterações</button>
+
+      <div class="login-modal-switch" style="margin-top:16px">
+        <a href="#" onclick="logoutUser(); return false;" style="color:var(--muted);font-size:12px;letter-spacing:1px">Sair da conta</a>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -266,6 +266,117 @@ window.submitLogin = async () => {
 
 window.logoutUser = () => handleLogout()
 
+// ─── MÁSCARA DE TELEFONE ─────────────────────────────────
+function applyPhoneMask(input) {
+  input.addEventListener('input', () => {
+    let v = input.value.replace(/\D/g, '').slice(0, 11)
+    if (v.length <= 10) {
+      // Fixo: (11) 1234-5678
+      v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+    } else {
+      // Celular: (11) 91234-5678
+      v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
+    }
+    input.value = v.replace(/-$/, '')
+  })
+}
+
+// ─── MODAL DE PERFIL ─────────────────────────────────────
+window.openProfileModal = () => {
+  const modal = document.getElementById('profileModal')
+  if (!modal || !currentUser) return
+  document.getElementById('profileNome').value  = currentUser.nome     || ''
+  document.getElementById('profileTel').value   = currentUser.telefone || ''
+  document.getElementById('profileSenha').value = ''
+  document.getElementById('profileSenhaConfirm').value = ''
+  clearProfileMessage()
+  modal.classList.add('open')
+}
+
+window.closeProfileModal = () => {
+  document.getElementById('profileModal')?.classList.remove('open')
+}
+
+window.toggleProfileSenha = () => {
+  const input = document.getElementById('profileSenha')
+  input.type = input.type === 'password' ? 'text' : 'password'
+}
+
+function showProfileMessage(text, type = 'error') {
+  let el = document.getElementById('profileModalMsg')
+  if (!el) {
+    el = document.createElement('div')
+    el.id = 'profileModalMsg'
+    const btn = document.getElementById('profileSaveBtn')
+    btn.parentNode.insertBefore(el, btn)
+  }
+  el.textContent = text
+  el.style.cssText = `
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    line-height: 1.5;
+    border-radius: 2px;
+    border: 1px solid ${type === 'error' ? '#c0392b' : '#27ae60'};
+    color: ${type === 'error' ? '#e74c3c' : '#2ecc71'};
+    background: ${type === 'error' ? 'rgba(192,57,43,0.08)' : 'rgba(39,174,96,0.08)'};
+  `
+}
+
+function clearProfileMessage() {
+  document.getElementById('profileModalMsg')?.remove()
+}
+
+window.saveProfile = async () => {
+  const nome    = document.getElementById('profileNome').value.trim()
+  const tel     = document.getElementById('profileTel').value.trim()
+  const senha   = document.getElementById('profileSenha').value
+  const confirm = document.getElementById('profileSenhaConfirm').value
+  const btn     = document.getElementById('profileSaveBtn')
+
+  clearProfileMessage()
+
+  if (!nome) { showProfileMessage('Informe seu nome.'); return }
+  if (senha && senha.length < 6) { showProfileMessage('A senha precisa ter pelo menos 6 caracteres.'); return }
+  if (senha && senha !== confirm) { showProfileMessage('As senhas não coincidem.'); return }
+
+  btn.textContent = 'Salvando...'
+  btn.disabled    = true
+
+  try {
+    // Atualiza o perfil no banco
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ nome, telefone: tel })
+      .eq('id', (await supabase.auth.getUser()).data.user.id)
+
+    if (profileError) throw new Error(profileError.message)
+
+    // Atualiza senha se informada
+    if (senha) {
+      const { error: passError } = await supabase.auth.updateUser({ password: senha })
+      if (passError) throw new Error(passError.message)
+    }
+
+    // Atualiza estado local
+    currentUser.nome     = nome
+    currentUser.telefone = tel
+    updateNavLoginBtns()
+
+    showProfileMessage('Alterações salvas com sucesso!', 'success')
+    document.getElementById('profileSenha').value        = ''
+    document.getElementById('profileSenhaConfirm').value = ''
+  } catch (err) {
+    showProfileMessage(err.message || 'Erro ao salvar. Tente novamente.')
+  } finally {
+    btn.textContent = 'Salvar alterações'
+    btn.disabled    = false
+  }
+}
+
+
 // ─── NAVEGAÇÃO ───────────────────────────────────────────
 function goToStep(n) {
   if (n === currentStep) return
@@ -665,9 +776,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.querySelectorAll('.nav-login-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (isLoggedIn) logoutUser()
+      if (isLoggedIn) openProfileModal()
       else openLoginModal()
     })
+  })
+
+  // Máscara de telefone em todos os campos de tel
+  ;['loginTel', 'profileTel'].forEach(id => {
+    const el = document.getElementById(id)
+    if (el) applyPhoneMask(el)
   })
 
   document.getElementById('btnAgendar').addEventListener('click', () => goToStep(1))

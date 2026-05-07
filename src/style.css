@@ -122,6 +122,12 @@ body {
   justify-content: flex-end;
 }
 
+.nav-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .nav-instagram {
   display: flex;
   align-items: center;
@@ -190,7 +196,7 @@ body {
   object-fit: contain;
   border-radius: 50%;
   vertical-align: middle;
-  margin-right: 6px;
+  margin-right: 0;
 }
 
 /* ─── HERO ─── */

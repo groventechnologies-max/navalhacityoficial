@@ -75,23 +75,10 @@ function updateNavLoginBtns() {
       btn.textContent = 'Login'
       btn.classList.remove('logged')
     }
+  })
 
-    // Insere/remove o botão Dashboard logo antes do ícone do Instagram
-    const navRight = btn.closest('.nav-right')
-    if (!navRight) return
-    let dashBtn = navRight.querySelector('.nav-dash-btn')
-
-    if (showDash && !dashBtn) {
-      dashBtn = document.createElement('a')
-      dashBtn.href = '/dashboard.html'
-      dashBtn.className = 'nav-dash-btn'
-      dashBtn.textContent = 'Dashboard'
-      // Insere entre o btn.nav-login-btn e o link do instagram
-      const instaLink = navRight.querySelector('.nav-instagram')
-      navRight.insertBefore(dashBtn, instaLink || null)
-    } else if (!showDash && dashBtn) {
-      dashBtn.remove()
-    }
+  document.querySelectorAll('.nav-dash-btn').forEach(link => {
+    link.style.display = showDash ? 'inline-block' : 'none'
   })
 }
 

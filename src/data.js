@@ -3,7 +3,7 @@ export const DATA = {
     {
       id: 1,
       nome: "Unidade 1",
-      regiao: "Centro Histórico",
+      regiao: "Itapema",
       endereco: "Rua Senador Salgado Filho, 95 — Vicente de Carvalho\nEm frente ao Terminal de Ônibus\nTel: (13) 98800-1001 · Seg–Sáb 09h–20h",
       mapsUrl: "https://maps.google.com/maps?q=Rua+Senador+Salgado+Filho+95,Vicente+de+Carvalho,Guarujá,SP,Brasil&output=embed",
       descricao: "Nossa unidade mais tradicional, localizada no coração da cidade. Com mais de 5 anos de história, o ambiente combina o charme clássico das barbearias de antigamente com técnicas modernas. Cadeiras vintage, cheiro de tônico e música boa — é isso que você vai encontrar aqui.",

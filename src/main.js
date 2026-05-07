@@ -77,9 +77,8 @@ async function handleRegister(nome, email, telefone, senha) {
 
   if (error) throw new Error(error.message)
 
-  // Não loga automaticamente — usuário precisa confirmar o email primeiro
-  // Retorna flag pra mostrar mensagem adequada
-  return { needsConfirmation: true }
+  // Loga automaticamente após registro (confirmação de email desativada)
+  if (data.session) await applySession(data.session)
 }
 
 // ─── AUTH: login ─────────────────────────────────────────
@@ -97,10 +96,6 @@ async function handleLogin(identifier, senha) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
 
   if (error) {
-    // Supabase retorna "Email not confirmed" quando o email ainda não foi confirmado
-    if (error.message === 'Email not confirmed') {
-      throw new Error('EMAIL_NOT_CONFIRMED')
-    }
     throw new Error('Email/telefone ou senha incorretos.')
   }
 
@@ -214,14 +209,11 @@ window.submitLogin = async () => {
 
       await handleRegister(nome, email, telefone, senha)
 
-      // Não fecha o modal — mostra instrução de confirmar email
-      showModalMessage(
-        '✅ Cadastro realizado! Verifique seu e-mail e clique no link de confirmação para ativar sua conta.',
-        'success'
-      )
-      btn.textContent = 'Criar conta'
-      btn.disabled    = false
-      return
+      // Fecha o modal e atualiza a UI — usuário já está logado
+      closeLoginModal()
+      updateNavLoginBtns()
+      const confirmSection = document.getElementById('confirmSection')
+      if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
 
     } else {
       const identifier = document.getElementById('loginIdentifier').value.trim()
@@ -236,11 +228,7 @@ window.submitLogin = async () => {
     }
 
   } catch (err) {
-    if (err.message === 'EMAIL_NOT_CONFIRMED') {
-      showModalMessage('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada (e o spam).')
-    } else {
-      showModalMessage(err.message || 'Erro inesperado. Tente novamente.')
-    }
+    showModalMessage(err.message || 'Erro inesperado. Tente novamente.')
   } finally {
     if (btn.disabled) {
       btn.textContent = mode === 'register' ? 'Criar conta' : 'Entrar'

@@ -17,7 +17,7 @@ export const DATA = {
         produtos:  null,
       },
       barbeiros: [
-        { nome: "Vinicius Bryan", foto: '/fotos/barbeiros/unidade-1/vinicius-bryan.jpeg', especialidade: "Todos os cortes", nota: "5.0 ★", badge: "Recomendado", portfolio: [] },
+        { nome: "Vinicius Bryan", foto: '/fotos/barbeiros/unidade-1/vinicius-bryan.jpeg', especialidade: "Todos os cortes", nota: "5.0 ★", badge: "Recomendado", portfolio: [3] },
         { nome: "Rafael Costa",   emoji: "💈", especialidade: "Degradê & Navalhado",  nota: "4.9 ★" },
         { nome: "Diego Mendes",   emoji: "✂️", especialidade: "Corte Clássico",        nota: "4.8 ★" },
         { nome: "Bruno Alves",    emoji: "🪒", especialidade: "Barba & Bigode",        nota: "4.7 ★" },

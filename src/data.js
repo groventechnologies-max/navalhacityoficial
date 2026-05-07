@@ -17,7 +17,7 @@ export const DATA = {
         produtos:  null,
       },
       barbeiros: [
-        { nome: "Vinicius Bryan", foto: '/fotos/barbeiros/unidade-1/vinicius-bryan.jpeg', especialidade: "Todos os cortes", nota: "5.0 ★", badge: "Recomendado", portfolio: ['/fotos/portfolio/unidade-1/vinicius-bryan/corte1.jpeg', '/fotos/portfolio/unidade-1/vinicius-bryan/corte2.jpeg', '/fotos/portfolio/unidade-1/vinicius-bryan/corte3.jpeg'] },
+        { nome: "Vinicius Bryan", foto: '/fotos/barbeiros/unidade-1/vinicius-bryan.jpeg', especialidade: "Todos os cortes", nota: "5.0 ★", portfolio: ['/fotos/portfolio/unidade-1/vinicius-bryan/corte1.jpeg', '/fotos/portfolio/unidade-1/vinicius-bryan/corte2.jpeg', '/fotos/portfolio/unidade-1/vinicius-bryan/corte3.jpeg'] },
         { nome: "Rafael Costa",   emoji: "💈", especialidade: "Degradê & Navalhado",  nota: "4.9 ★" },
         { nome: "Diego Mendes",   emoji: "✂️", especialidade: "Corte Clássico",        nota: "4.8 ★" },
         { nome: "Bruno Alves",    emoji: "🪒", especialidade: "Barba & Bigode",        nota: "4.7 ★" },
@@ -33,7 +33,7 @@ export const DATA = {
       stats: [{ n: "3+", l: "Anos de operação" }, { n: "1.8k", l: "Clientes atendidos" }, { n: "97%", l: "Satisfação" }],
       tags: ["Estacionamento próprio", "Aceita cartão", "Cerveja inclusa"],
       barbeiros: [
-        { nome: "Mateus Lima",   emoji: "💈", especialidade: "Corte Moderno",         nota: "4.9 ★", badge: "Recomendado" },
+        { nome: "Mateus Lima",   emoji: "💈", especialidade: "Corte Moderno",         nota: "4.9 ★" },
         { nome: "Gustavo Neto",  emoji: "✂️", especialidade: "Barba Desenhada",       nota: "4.8 ★" },
         { nome: "Felipe Torres", emoji: "🪒", especialidade: "Degradê Americano",     nota: "4.9 ★" },
         { nome: "André Souza",   emoji: "💈", especialidade: "Corte Infantil",         nota: "4.7 ★" },
@@ -49,7 +49,7 @@ export const DATA = {
       stats: [{ n: "2+", l: "Anos de operação" }, { n: "1.2k", l: "Clientes atendidos" }, { n: "99%", l: "Satisfação" }],
       tags: ["Aberto domingo", "Tratamentos premium", "Aceita PIX/cartão"],
       barbeiros: [
-        { nome: "Caio Ferreira",  emoji: "✂️", especialidade: "Coloração Masculina",  nota: "5.0 ★", badge: "Recomendado" },
+        { nome: "Caio Ferreira",  emoji: "✂️", especialidade: "Coloração Masculina",  nota: "5.0 ★" },
         { nome: "Leonardo Paz",   emoji: "💈", especialidade: "Corte Premium",         nota: "4.9 ★" },
       ]
     },
@@ -63,7 +63,7 @@ export const DATA = {
       stats: [{ n: "1+", l: "Anos de operação" }, { n: "900+", l: "Clientes atendidos" }, { n: "96%", l: "Satisfação" }],
       tags: ["Espaço gamer", "Aceita PIX", "Convênio empresas"],
       barbeiros: [
-        { nome: "Thiago Ramos",  emoji: "💈", especialidade: "Corte Street",          nota: "4.8 ★", badge: "Recomendado" },
+        { nome: "Thiago Ramos",  emoji: "💈", especialidade: "Corte Street",          nota: "4.8 ★" },
         { nome: "Vitor Hugo",    emoji: "✂️", especialidade: "Undercut & Fade",       nota: "4.9 ★" },
         { nome: "Samuel Dias",   emoji: "🪒", especialidade: "Barba Completa",        nota: "4.7 ★" },
         { nome: "João Pedro",    emoji: "💈", especialidade: "Dreads & Tranças",      nota: "4.8 ★" },
@@ -80,7 +80,7 @@ export const DATA = {
       stats: [{ n: "2+", l: "Anos de operação" }, { n: "1.1k", l: "Clientes atendidos" }, { n: "98%", l: "Satisfação" }],
       tags: ["Ambiente familiar", "Corte infantil", "Aceita PIX/cartão"],
       barbeiros: [
-        { nome: "Paulo Henrique", emoji: "💈", especialidade: "Família & Kids",        nota: "4.9 ★", badge: "Recomendado" },
+        { nome: "Paulo Henrique", emoji: "💈", especialidade: "Família & Kids",        nota: "4.9 ★" },
         { nome: "Rodrigo Melo",   emoji: "✂️", especialidade: "Navalhado Clássico",    nota: "4.8 ★" },
         { nome: "Marcos Silva",   emoji: "🪒", especialidade: "Barba & Hidratação",    nota: "4.9 ★" },
         { nome: "Eduardo Lima",   emoji: "💈", especialidade: "Corte Social",           nota: "4.7 ★" },

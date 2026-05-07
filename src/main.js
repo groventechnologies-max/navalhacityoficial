@@ -167,7 +167,7 @@ function renderPerfil() {
 
     <footer class="step-footer">
       <div class="logo-ft">Navalha<span>City</span></div>
-      <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela Groven</div>
+      <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela <a href="https://groven.netlify.app/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;opacity:0.7;">Groven</a></div>
     </footer>
   `;
 }
@@ -264,7 +264,7 @@ function renderAgendamento() {
 
     <footer class="step-footer">
       <div class="logo-ft">Navalha<span>City</span></div>
-      <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela Groven</div>
+      <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela <a href="https://groven.netlify.app/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;opacity:0.7;">Groven</a></div>
     </footer>
   `;
 

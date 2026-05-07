@@ -12,6 +12,8 @@ function escapeHTML(str) {
 
 // ─── STATE ───────────────────────────────────────────────
 let currentStep = 0;
+let isLoggedIn = false;
+let currentUser = null;
 
 const state = {
   filial:   null,
@@ -31,6 +33,7 @@ function goToStep(n) {
   from.classList.remove('active');
   to.classList.add('active');
   to.scrollTop = 0;
+  window.scrollTo(0, 0);
 
   currentStep = n;
 }
@@ -252,15 +255,7 @@ function renderAgendamento() {
       <div class="times-grid" id="timesGrid"></div>
     </div>
 
-    <div class="confirm-form">
-      <h4>Seus dados</h4>
-      <div class="form-row">
-        <input class="form-input" type="text"  id="clientName"  placeholder="Seu nome completo">
-        <input class="form-input" type="tel"   id="clientPhone" placeholder="WhatsApp">
-      </div>
-      <textarea class="form-input" rows="3" id="clientObs" placeholder="Observações (opcional)" style="resize:none;width:100%"></textarea>
-      <button class="btn-confirm" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
-    </div>
+    <div id="confirmSection">${renderConfirmSection()}</div>
 
     <footer class="step-footer">
       <div class="logo-ft">Navalha<span>City</span></div>
@@ -270,6 +265,124 @@ function renderAgendamento() {
 
   renderDias();
 }
+
+function renderConfirmSection() {
+  if (!isLoggedIn) {
+    return `
+      <div class="login-wall">
+        <div class="login-wall-icon">🔒</div>
+        <div class="login-wall-title">Faça login para continuar</div>
+        <p class="login-wall-sub">Para confirmar seu agendamento, você precisa estar logado.</p>
+        <button class="btn-login-wall" onclick="openLoginModal()">Entrar na minha conta</button>
+        <div class="login-wall-register">Não tem conta? <a href="#" onclick="openLoginModal('register'); return false;">Criar conta grátis</a></div>
+      </div>
+    `;
+  }
+  return `
+    <div class="confirm-form">
+      <div class="confirm-form-user">
+        <div class="confirm-form-user-avatar">${currentUser.nome.charAt(0).toUpperCase()}</div>
+        <div>
+          <div class="confirm-form-user-name">${escapeHTML(currentUser.nome)}</div>
+          <button class="confirm-form-logout" onclick="logoutUser()">Sair</button>
+        </div>
+      </div>
+      <h4>Confirme seus dados</h4>
+      <div class="form-row">
+        <input class="form-input" type="text" id="clientName" placeholder="Seu nome completo" value="${escapeHTML(currentUser.nome)}">
+        <input class="form-input" type="tel"  id="clientPhone" placeholder="WhatsApp" value="${escapeHTML(currentUser.telefone)}">
+      </div>
+      <textarea class="form-input" rows="3" id="clientObs" placeholder="Observações (opcional)" style="resize:none;width:100%"></textarea>
+      <button class="btn-confirm" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
+    </div>
+  `;
+}
+
+window.openLoginModal = (mode = 'login') => {
+  const modal = document.getElementById('loginModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  applyLoginMode(mode);
+  // Limpa campos
+  ['loginNome','loginIdentifier','loginEmail','loginTel','loginSenha'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+};
+
+function applyLoginMode(mode) {
+  document.getElementById('loginModalMode').value = mode;
+  const isReg = mode === 'register';
+  document.getElementById('loginModalTitle').textContent = isReg ? 'Criar conta' : 'Entrar na conta';
+  document.getElementById('loginModalBtn').textContent   = isReg ? 'Criar conta' : 'Entrar';
+  document.getElementById('fieldNome').style.display        = isReg ? 'block' : 'none';
+  document.getElementById('fieldEmail').style.display       = isReg ? 'block' : 'none';
+  document.getElementById('fieldWhats').style.display       = isReg ? 'block' : 'none';
+  document.getElementById('fieldIdentifier').style.display  = isReg ? 'none'  : 'block';
+  document.getElementById('loginSwitchText').textContent    = isReg ? 'Já tem conta?' : 'Não tem conta?';
+  document.getElementById('loginSwitchLink').textContent    = isReg ? 'Fazer login' : 'Criar conta grátis';
+}
+
+window.toggleLoginMode = () => {
+  const current = document.getElementById('loginModalMode').value;
+  applyLoginMode(current === 'login' ? 'register' : 'login');
+  ['loginNome','loginIdentifier','loginEmail','loginTel','loginSenha'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+};
+
+window.toggleSenha = () => {
+  const input = document.getElementById('loginSenha');
+  input.type = input.type === 'password' ? 'text' : 'password';
+};
+
+window.closeLoginModal = () => {
+  const modal = document.getElementById('loginModal');
+  if (modal) modal.classList.remove('open');
+};
+
+window.submitLogin = () => {
+  const mode = document.getElementById('loginModalMode').value;
+  const senha = document.getElementById('loginSenha').value.trim();
+  if (!senha) { alert('Informe sua senha.'); return; }
+
+  let nome, telefone;
+  if (mode === 'register') {
+    nome     = document.getElementById('loginNome').value.trim();
+    const email = document.getElementById('loginEmail').value.trim();
+    telefone = document.getElementById('loginTel').value.trim();
+    if (!nome || !email || !telefone) { alert('Preencha todos os campos.'); return; }
+  } else {
+    const identifier = document.getElementById('loginIdentifier').value.trim();
+    if (!identifier) { alert('Informe seu WhatsApp ou e-mail.'); return; }
+    nome     = identifier.split('@')[0].split('(')[0].trim() || 'Usuário';
+    telefone = identifier;
+  }
+
+  isLoggedIn  = true;
+  currentUser = { nome, telefone };
+  saveSession(currentUser);
+  document.querySelectorAll('.nav-login-btn').forEach(btn => {
+    btn.textContent = nome.split(' ')[0];
+    btn.classList.add('logged');
+  });
+  closeLoginModal();
+  const confirmSection = document.getElementById('confirmSection');
+  if (confirmSection) confirmSection.innerHTML = renderConfirmSection();
+};
+
+window.logoutUser = () => {
+  isLoggedIn  = false;
+  currentUser = null;
+  clearSession();
+  document.querySelectorAll('.nav-login-btn').forEach(btn => {
+    btn.textContent = 'Login';
+    btn.classList.remove('logged');
+  });
+  const confirmSection = document.getElementById('confirmSection');
+  if (confirmSection) confirmSection.innerHTML = renderConfirmSection();
+};
 
 window.selecionarServico = (i) => {
   document.querySelectorAll('.service-item').forEach(s => s.classList.remove('selected'));
@@ -322,8 +435,10 @@ function renderHorarios() {
 }
 
 window.selecionarHorario = (i, h) => {
+  const btn = document.getElementById(`time-${i}`);
+  if (btn.classList.contains('unavailable')) return;
   document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-  document.getElementById(`time-${i}`).classList.add('selected');
+  btn.classList.add('selected');
   state.horario = h;
 };
 
@@ -341,7 +456,8 @@ window.confirmarAgendamento = () => {
     return;
   }
 
-  const btn = document.querySelector('.btn-confirm');
+  const btn = document.querySelector('#confirmSection .btn-confirm');
+  if (!btn) return;
   btn.textContent = 'Reservando...';
   btn.disabled = true;
 
@@ -364,9 +480,42 @@ function resetFlow() {
   goToStep(0);
 }
 
+// ─── PERSISTÊNCIA DE LOGIN ──────────────────────────────
+function loadSession() {
+  try {
+    const saved = localStorage.getItem('navalhacity_user');
+    if (saved) {
+      currentUser = JSON.parse(saved);
+      isLoggedIn  = true;
+    }
+  } catch (e) { /* ignora */ }
+}
+
+function saveSession(user) {
+  try { localStorage.setItem('navalhacity_user', JSON.stringify(user)); } catch (e) { /* ignora */ }
+}
+
+function clearSession() {
+  try { localStorage.removeItem('navalhacity_user'); } catch (e) { /* ignora */ }
+}
+
 // ─── INIT ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  loadSession();
   renderFiliais();
+
+  // Login modal overlay click
+  document.getElementById('loginModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeLoginModal();
+  });
+
+  // Nav login buttons
+  document.querySelectorAll('.nav-login-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isLoggedIn) logoutUser();
+      else openLoginModal();
+    });
+  });
 
   document.getElementById('btnAgendar').addEventListener('click', () => goToStep(1));
   document.getElementById('back1').addEventListener('click',     () => goToStep(0));

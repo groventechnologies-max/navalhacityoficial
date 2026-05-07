@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Navalha City</title>
-  <link rel="icon" type="image/jpeg" href="/src/logo.jpg.jpeg">
+  <link rel="icon" type="image/jpeg" href="/src/logo.jpeg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/style.css">
@@ -17,7 +17,7 @@
       <div class="hero">
         <div class="hero-bg"></div>
         <div class="hero-logo-wrap">
-          <img class="hero-logo" src="/src/logo.jpg.jpeg" alt="Navalha City">
+          <img class="hero-logo" src="/src/logo.jpeg" alt="Navalha City">
         </div>
         <div class="hero-badge">Est. 2019 &nbsp;·&nbsp; Excelência em cada corte</div>
         <h1 class="hero-title">Navalha<span>City</span></h1>
@@ -44,7 +44,7 @@
           <div class="dot"></div>
         </div>
         <div class="nav-right">
-          <div class="nav-brand"><img class="nav-logo" src="/src/logo.jpg.jpeg" alt="Navalha City"> Navalha<span>City</span></div>
+          <div class="nav-brand"><img class="nav-logo" src="/src/logo.jpeg" alt="Navalha City"> Navalha<span>City</span></div>
           <button class="nav-login-btn">Login</button>
           <a href="https://www.instagram.com/barbearia_navalhacity?igsh=MTUyaHpjaTg2b2lmdw==" target="_blank" rel="noopener" class="nav-instagram" aria-label="Instagram">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>
@@ -106,6 +106,13 @@
 
     <!-- STEP 4: CONFIRMAÇÃO -->
     <div class="step" id="step-4">
+      <nav class="step-nav">
+        <div></div>
+        <div class="nav-right">
+          <div class="nav-brand"><img class="nav-logo" src="/src/logo.jpeg" alt="Navalha City"> Navalha<span>City</span></div>
+          <button class="nav-login-btn">Login</button>
+        </div>
+      </nav>
       <div class="step-content center-content">
         <div class="confirm-screen">
           <div class="confirm-icon">✂️</div>
@@ -117,6 +124,58 @@
     </div>
 
   </div>
+
+  <!-- MODAL DE LOGIN -->
+  <div class="login-modal-overlay" id="loginModal">
+    <div class="login-modal">
+      <button class="login-modal-close" onclick="closeLoginModal()">✕</button>
+      <div class="login-modal-logo">Navalha<span>City</span></div>
+      <h2 class="login-modal-title" id="loginModalTitle">Entrar na conta</h2>
+      <input type="hidden" id="loginModalMode" value="login">
+
+      <!-- CAMPOS APENAS NO REGISTRO -->
+      <div class="login-modal-field" id="fieldNome" style="display:none">
+        <label>Nome completo</label>
+        <input class="form-input" type="text" id="loginNome" placeholder="Seu nome completo">
+      </div>
+
+      <!-- CAMPO LOGIN: whatsapp ou email -->
+      <div class="login-modal-field" id="fieldIdentifier">
+        <label id="labelIdentifier">WhatsApp ou E-mail</label>
+        <input class="form-input" type="text" id="loginIdentifier" placeholder="(11) 99999-9999 ou seu@email.com">
+      </div>
+
+      <!-- CAMPO APENAS NO REGISTRO: whatsapp separado -->
+      <div class="login-modal-field" id="fieldEmail" style="display:none">
+        <label>E-mail</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="seu@email.com">
+      </div>
+      <div class="login-modal-field" id="fieldWhats" style="display:none">
+        <label>WhatsApp</label>
+        <input class="form-input" type="tel" id="loginTel" placeholder="(11) 99999-9999">
+      </div>
+
+      <!-- SENHA (ambos os modos) -->
+      <div class="login-modal-field">
+        <label>Senha</label>
+        <div class="login-password-wrap">
+          <input class="form-input" type="password" id="loginSenha" placeholder="••••••••">
+          <button class="login-show-pass" type="button" onclick="toggleSenha()">👁</button>
+        </div>
+      </div>
+
+      <button class="btn-confirm" id="loginModalBtn" onclick="submitLogin()">Entrar</button>
+
+      <div class="login-modal-switch">
+        <span id="loginSwitchText">Não tem conta?</span>
+        <a href="#" id="loginSwitchLink" onclick="toggleLoginMode(); return false;">Criar conta grátis</a>
+      </div>
+      <div class="login-modal-alt">
+        Ao entrar, você concorda com nossos <a href="#">Termos de Uso</a>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@ export const DATA = {
         ambiente:  '/fotos/unidade-1/ambiente.jpeg',
         detalhe:   '/fotos/unidade-1/detalhe.jpeg',
         cadeira:   '/fotos/unidade-1/cadeira.jpeg',
-        produtos:  null,
+        produtos:  undefined,
       },
       barbeiros: [
         { nome: "Vinicius Bryan", foto: '/fotos/barbeiros/unidade-1/vinicius-bryan.jpeg', especialidade: "Todos os cortes", nota: "5.0 ★", portfolio: ['/fotos/portfolio/unidade-1/vinicius-bryan/corte1.jpeg', '/fotos/portfolio/unidade-1/vinicius-bryan/corte2.jpeg', '/fotos/portfolio/unidade-1/vinicius-bryan/corte3.jpeg'] },

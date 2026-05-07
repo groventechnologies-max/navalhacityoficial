@@ -1422,7 +1422,17 @@ body {
   letter-spacing: 0.5px;
   line-height: 1.6;
 }
-.login-modal-alt a { color: var(--muted); text-decoration: underline; }
+.login-modal-switch {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+.login-modal-switch a {
+  color: var(--white);
+  text-decoration: underline;
+  font-weight: 600;
+}
 
 .login-password-wrap {
   position: relative;

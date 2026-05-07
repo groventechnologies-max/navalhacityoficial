@@ -92,19 +92,24 @@ function renderPerfil() {
   document.getElementById('profileContent').innerHTML = `
     <div class="section-label">${f.nome} — ${f.regiao}</div>
 
-    <div class="profile-photos">
-      ${[
-        { key: 'principal', label: 'Foto Principal' },
-        { key: 'ambiente',  label: 'Ambiente' },
-        { key: 'detalhe',   label: 'Detalhe' },
-        { key: 'cadeira',   label: 'Cadeira' },
-        { key: 'produtos',  label: 'Produtos' },
-      ].map(({ key, label }) => {
-        const url = f.fotos && f.fotos[key];
-        return `<div class="photo-placeholder${url ? ' has-photo' : ''}" data-label="${label}">
-          ${url ? `<img src="${url}" alt="${label}">` : ''}
-        </div>`;
-      }).join('')}
+    <div class="profile-photos-wrap">
+      <div class="profile-photos" id="photosCarousel">
+        ${[
+          { key: 'principal', label: 'Foto Principal' },
+          { key: 'ambiente',  label: 'Ambiente' },
+          { key: 'detalhe',   label: 'Detalhe' },
+          { key: 'cadeira',   label: 'Cadeira' },
+          { key: 'produtos',  label: 'Produtos' },
+        ].map(({ key, label }) => {
+          const url = f.fotos && f.fotos[key];
+          return `<div class="photo-placeholder${url ? ' has-photo' : ''}" data-label="${label}">
+            ${url ? `<img src="${url}" alt="${label}">` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="photo-nav photo-nav-prev" onclick="scrollPhotos(-1)">←</button>
+      <button class="photo-nav photo-nav-next" onclick="scrollPhotos(1)">→</button>
+      <div class="photo-counter" id="photoCounter">1 / 5</div>
     </div>
 
     <div class="profile-desc">
@@ -147,6 +152,17 @@ function renderPerfil() {
     </footer>
   `;
 }
+
+window.scrollPhotos = (dir) => {
+  const el = document.getElementById('photosCarousel');
+  if (!el) return;
+  el.scrollBy({ left: dir * el.offsetWidth, behavior: 'smooth' });
+  setTimeout(() => {
+    const idx = Math.round(el.scrollLeft / el.offsetWidth) + 1;
+    const counter = document.getElementById('photoCounter');
+    if (counter) counter.textContent = `${idx} / 5`;
+  }, 320);
+};
 
 window.selecionarBarbeiro = (idx) => {
   document.querySelectorAll('.barber-card').forEach(c => c.classList.remove('selected'));

@@ -1471,20 +1471,21 @@ body {
   letter-spacing: 2px;
 }
 
-/* ─── LINK DASHBOARD NA NAV ─── */
+/* ─── BOTÃO DASHBOARD NA NAV ─── */
 .nav-dash-btn {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--white);
+  color: var(--muted);
   text-decoration: none;
   border: 1px solid var(--border);
   padding: 5px 12px;
   border-radius: 2px;
-  transition: border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
 }
 .nav-dash-btn:hover {
-  border-color: var(--white);
   color: var(--white);
+  border-color: var(--white);
 }

@@ -77,6 +77,10 @@ function updateNavLoginBtns() {
   document.querySelectorAll('.nav-dash-btn').forEach(link => {
     link.style.display = (isLoggedIn && dashRoles.includes(currentUser?.role)) ? 'inline-block' : 'none'
   })
+  const profileDashLink = document.getElementById('profileDashLink')
+  if (profileDashLink) {
+    profileDashLink.style.display = (isLoggedIn && dashRoles.includes(currentUser?.role)) ? 'inline' : 'none'
+  }
 }
 
 // ─── AUTH: registro ──────────────────────────────────────

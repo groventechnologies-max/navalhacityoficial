@@ -114,6 +114,7 @@
     <div class="nav-right">
     <div class="nav-brand-group"><img class="nav-logo" src="/src/logo.jpeg" alt="Navalha City"><div class="nav-brand">Navalha<span>City</span></div></div>
           <button class="nav-login-btn">Login</button>
+          <a href="/dashboard.html" id="dashLink4" class="nav-dash-btn" style="display:none">Dashboard</a>
         </div>
       </nav>
       <div class="step-content center-content">
@@ -216,7 +217,8 @@
 
       <button class="btn-confirm" id="profileSaveBtn" onclick="saveProfile()">Salvar alterações</button>
 
-      <div class="login-modal-switch" style="margin-top:16px">
+      <div class="login-modal-switch" style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+        <a href="/dashboard.html" id="profileDashLink" style="display:none;color:var(--white);font-size:12px;letter-spacing:1px;font-family:'Barlow Condensed',sans-serif">→ Dashboard</a>
         <a href="#" onclick="logoutUser(); return false;" style="color:var(--muted);font-size:12px;letter-spacing:1px">Sair da conta</a>
       </div>
 

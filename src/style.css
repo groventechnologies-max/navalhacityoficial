@@ -1037,3 +1037,103 @@ body {
   /* FOOTER */
   .step-footer { padding: 24px 0; margin-top: 40px; }
 }
+
+/* ─── BADGES ─── */
+.barber-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #000;
+  background: var(--orange);
+  padding: 3px 8px;
+  z-index: 3;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+}
+
+.svc-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #000;
+  background: var(--orange);
+  padding: 2px 8px;
+  display: inline-block;
+  margin-bottom: 4px;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+}
+
+.service-item.has-badge { flex-direction: column; align-items: flex-start; gap: 2px; }
+.svc-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+
+/* ─── SKELETON ─── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.sk {
+  background: linear-gradient(90deg, var(--card) 25%, #1e1e1e 50%, var(--card) 75%);
+  background-size: 1200px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 2px;
+}
+.sk-num   { width: 48px; height: 44px; margin-right: 28px; flex-shrink: 0; }
+.sk-title { height: 16px; width: 160px; margin-bottom: 10px; }
+.sk-sub   { height: 11px; width: 110px; }
+.sk-card .filial-header { cursor: default; gap: 0; }
+.sk-card .filial-left   { align-items: center; }
+
+/* ─── DISPONIBILIDADE ─── */
+.avail-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  transition: color 0.4s;
+}
+.avail-bar.active { color: var(--orange); }
+.avail-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.4s;
+}
+.avail-bar.active .avail-dot {
+  background: var(--orange);
+  animation: availPulse 1.4s ease-in-out infinite;
+}
+@keyframes availPulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.6; }
+  50%       { transform: scale(1.25); opacity: 1; }
+}
+
+/* ─── ANIMAÇÃO CONFIRMAÇÃO ─── */
+.confirm-icon {
+  animation: confirmPop 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+@keyframes confirmPop {
+  from { transform: scale(0) rotate(-15deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0);      opacity: 1; }
+}
+.confirm-title  { animation: fadeUp 0.5s 0.3s both; }
+.confirm-details { animation: fadeUp 0.5s 0.5s both; }
+#btnReset       { animation: fadeUp 0.5s 0.7s both; }
+
+/* ─── BOTÃO CARREGANDO ─── */
+.btn-confirm:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  letter-spacing: 2px;
+}

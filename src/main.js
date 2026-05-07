@@ -37,38 +37,56 @@ function goToStep(n) {
 
 // ─── STEP 1: FILIAIS ─────────────────────────────────────
 function renderFiliais() {
-  document.getElementById('filiaisList').innerHTML = DATA.filiais.map(f => `
-    <div class="filial-item" id="filial-${f.id}">
-      <div class="filial-header" onclick="toggleFilial(${f.id})">
+  const el = document.getElementById('filiaisList');
+
+  el.innerHTML = Array(5).fill(0).map(() => `
+    <div class="filial-item sk-card">
+      <div class="filial-header">
         <div class="filial-left">
-          <div class="filial-num">0${f.id}</div>
-          <div class="filial-info">
-            <h3>${f.nome}</h3>
-            <p>${f.regiao}</p>
-          </div>
-        </div>
-        <div class="filial-arrow">▼</div>
-      </div>
-      <div class="filial-body">
-        <div class="filial-content">
-          <div class="filial-address">
-            <h4>Endereço</h4>
-            <p>${f.endereco.replace(/\n/g, '<br>')}</p>
-            <div class="filial-tags">
-              ${f.tags.map(t => `<span class="tag">${t}</span>`).join('')}
-            </div>
-            <button class="btn-select" onclick="selecionarFilial(${f.id})">
-              Escolher esta unidade →
-            </button>
-          </div>
-          <div class="filial-map">
-            <iframe src="${f.mapsUrl}" allowfullscreen loading="lazy"></iframe>
-            <div class="map-overlay"></div>
+          <div class="sk sk-num"></div>
+          <div>
+            <div class="sk sk-title"></div>
+            <div class="sk sk-sub"></div>
           </div>
         </div>
       </div>
     </div>
   `).join('');
+
+  setTimeout(() => {
+    el.innerHTML = DATA.filiais.map(f => `
+      <div class="filial-item" id="filial-${f.id}">
+        <div class="filial-header" onclick="toggleFilial(${f.id})">
+          <div class="filial-left">
+            <div class="filial-num">0${f.id}</div>
+            <div class="filial-info">
+              <h3>${f.nome}</h3>
+              <p>${f.regiao}</p>
+            </div>
+          </div>
+          <div class="filial-arrow">▼</div>
+        </div>
+        <div class="filial-body">
+          <div class="filial-content">
+            <div class="filial-address">
+              <h4>Endereço</h4>
+              <p>${f.endereco.replace(/\n/g, '<br>')}</p>
+              <div class="filial-tags">
+                ${f.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+              </div>
+              <button class="btn-select" onclick="selecionarFilial(${f.id})">
+                Escolher esta unidade →
+              </button>
+            </div>
+            <div class="filial-map">
+              <iframe src="${f.mapsUrl}" allowfullscreen loading="lazy"></iframe>
+              <div class="map-overlay"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }, 600);
 }
 
 window.toggleFilial = (id) => {
@@ -134,6 +152,7 @@ function renderPerfil() {
       ${f.barbeiros.map((b, i) => `
         <div class="barber-card" id="barber-${i}" onclick="selecionarBarbeiro(${i})">
           <div class="selected-badge">Selecionado</div>
+          ${b.badge ? `<div class="barber-badge">${b.badge}</div>` : ''}
           <div class="barber-photo">
             ${b.foto ? `<img src="${b.foto}" alt="${b.nome}">` : (b.emoji || '✂️')}
           </div>
@@ -199,9 +218,12 @@ function renderAgendamento() {
       <div class="sched-label">Serviço desejado</div>
       <div class="services-grid">
         ${DATA.servicos.map((s, i) => `
-          <div class="service-item" id="svc-${i}" onclick="selecionarServico(${i})">
+          <div class="service-item${s.badge ? ' has-badge' : ''}" id="svc-${i}" onclick="selecionarServico(${i})">
+            ${s.badge ? `<span class="svc-badge">${s.badge}</span>` : ''}
+            <div class="svc-row">
             <span class="service-name">${s.nome}</span>
             <span class="service-price">${s.preco}</span>
+            </div>
           </div>
         `).join('')}
       </div>
@@ -209,6 +231,10 @@ function renderAgendamento() {
 
     <div class="sched-block">
       <div class="sched-label">Escolha a data</div>
+      <div class="avail-bar" id="availBar">
+        <div class="avail-dot"></div>
+        <span id="availText">Selecione uma data</span>
+      </div>
       <div class="days-strip" id="daysStrip"></div>
       <div class="times-grid" id="timesGrid"></div>
     </div>
@@ -263,6 +289,10 @@ window.selecionarDia = (i, label) => {
   document.getElementById(`day-${i}`).classList.add('selected');
   state.dia = label;
   renderHorarios();
+  const bar  = document.getElementById('availBar');
+  const text = document.getElementById('availText');
+  if (bar)  bar.classList.add('active');
+  if (text) text.textContent = '15 horários disponíveis';
 };
 
 function renderHorarios() {
@@ -298,16 +328,21 @@ window.confirmarAgendamento = () => {
     return;
   }
 
-  document.getElementById('confirmDetails').innerHTML = `
-    <div><strong>Cliente:</strong> ${escapeHTML(nome)}</div>
-    <div><strong>Unidade:</strong> ${escapeHTML(state.filial.nome)}</div>
-    <div><strong>Barbeiro:</strong> ${escapeHTML(state.barbeiro.nome)}</div>
-    <div><strong>Serviço:</strong> ${escapeHTML(state.servico.nome)} — <span class="hl">${escapeHTML(state.servico.preco)}</span></div>
-    <div><strong>Data:</strong> ${escapeHTML(state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
-    <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação enviada para <span class="hl">${escapeHTML(tel)}</span></div>
-  `;
+  const btn = document.querySelector('.btn-confirm');
+  btn.textContent = 'Reservando...';
+  btn.disabled = true;
 
-  goToStep(4);
+  setTimeout(() => {
+    document.getElementById('confirmDetails').innerHTML = `
+      <div><strong>Cliente:</strong> ${escapeHTML(nome)}</div>
+      <div><strong>Unidade:</strong> ${escapeHTML(state.filial.nome)}</div>
+      <div><strong>Barbeiro:</strong> ${escapeHTML(state.barbeiro.nome)}</div>
+      <div><strong>Serviço:</strong> ${escapeHTML(state.servico.nome)} — <span class="hl">${escapeHTML(state.servico.preco)}</span></div>
+      <div><strong>Data:</strong> ${escapeHTML(state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
+      <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação enviada para <span class="hl">${escapeHTML(tel)}</span></div>
+    `;
+    goToStep(4);
+  }, 1000);
 };
 
 // ─── RESET ───────────────────────────────────────────────
@@ -325,4 +360,21 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('back2').addEventListener('click',     () => goToStep(1));
   document.getElementById('back3').addEventListener('click',     () => goToStep(2));
   document.getElementById('btnReset').addEventListener('click',  resetFlow);
+
+  // Swipe para voltar
+  let _tx = null, _ty = null;
+  document.addEventListener('touchstart', e => {
+    if (e.target.closest('.profile-photos') || e.target.closest('.days-strip')) { _tx = null; return; }
+    _tx = e.changedTouches[0].screenX;
+    _ty = e.changedTouches[0].screenY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (_tx === null) return;
+    const dx = e.changedTouches[0].screenX - _tx;
+    const dy = e.changedTouches[0].screenY - _ty;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 0 && currentStep > 0) {
+      goToStep(currentStep - 1);
+    }
+    _tx = null;
+  }, { passive: true });
 });

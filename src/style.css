@@ -482,6 +482,14 @@ body {
   inset: 0;
   background: linear-gradient(135deg, transparent 50%, rgba(232,119,34,0.04));
 }
+.photo-placeholder.has-photo::before,
+.photo-placeholder.has-photo::after { display: none; }
+.photo-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 
 .profile-desc {
   display: grid;
@@ -584,6 +592,13 @@ body {
   inset: 0;
   background: rgba(255,255,255,0.05);
   z-index: 1;
+}
+.barber-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
 }
 
 .barber-info { padding: 16px 20px 20px; }

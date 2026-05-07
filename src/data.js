@@ -9,10 +9,18 @@ export const DATA = {
       descricao: "Nossa unidade mais tradicional, localizada no coração da cidade. Com mais de 5 anos de história, o ambiente combina o charme clássico das barbearias de antigamente com técnicas modernas. Cadeiras vintage, cheiro de tônico e música boa — é isso que você vai encontrar aqui.",
       stats: [{ n: "5+", l: "Anos de história" }, { n: "2.4k", l: "Clientes atendidos" }, { n: "98%", l: "Satisfação" }],
       tags: ["Estacionamento próximo", "Aceita PIX", "Wi-Fi gratuito"],
+      fotos: {
+        principal: '/fotos/unidade-1/principal.jpeg',
+        ambiente:  '/fotos/unidade-1/ambiente.jpeg',
+        detalhe:   '/fotos/unidade-1/detalhe.jpeg',
+        cadeira:   '/fotos/unidade-1/cadeira.jpeg',
+        produtos:  null,
+      },
       barbeiros: [
-        { nome: "Rafael Costa",  emoji: "💈", especialidade: "Degradê & Navalhado",  nota: "4.9 ★" },
-        { nome: "Diego Mendes",  emoji: "✂️", especialidade: "Corte Clássico",        nota: "4.8 ★" },
-        { nome: "Bruno Alves",   emoji: "🪒", especialidade: "Barba & Bigode",        nota: "4.7 ★" },
+        { nome: "Vinicius Bryan", foto: '/fotos/barbeiros/unidade-1/vinicius-bryan.jpeg', especialidade: "Todos os cortes", nota: "5.0 ★" },
+        { nome: "Rafael Costa",   emoji: "💈", especialidade: "Degradê & Navalhado",  nota: "4.9 ★" },
+        { nome: "Diego Mendes",   emoji: "✂️", especialidade: "Corte Clássico",        nota: "4.8 ★" },
+        { nome: "Bruno Alves",    emoji: "🪒", especialidade: "Barba & Bigode",        nota: "4.7 ★" },
       ]
     },
     {

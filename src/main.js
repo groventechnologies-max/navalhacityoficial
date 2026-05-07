@@ -93,11 +93,18 @@ function renderPerfil() {
     <div class="section-label">${f.nome} — ${f.regiao}</div>
 
     <div class="profile-photos">
-      <div class="photo-placeholder" data-label="Foto Principal"></div>
-      <div class="photo-placeholder" data-label="Ambiente"></div>
-      <div class="photo-placeholder" data-label="Detalhe"></div>
-      <div class="photo-placeholder" data-label="Cadeira"></div>
-      <div class="photo-placeholder" data-label="Produtos"></div>
+      ${[
+        { key: 'principal', label: 'Foto Principal' },
+        { key: 'ambiente',  label: 'Ambiente' },
+        { key: 'detalhe',   label: 'Detalhe' },
+        { key: 'cadeira',   label: 'Cadeira' },
+        { key: 'produtos',  label: 'Produtos' },
+      ].map(({ key, label }) => {
+        const url = f.fotos && f.fotos[key];
+        return `<div class="photo-placeholder${url ? ' has-photo' : ''}" data-label="${label}">
+          ${url ? `<img src="${url}" alt="${label}">` : ''}
+        </div>`;
+      }).join('')}
     </div>
 
     <div class="profile-desc">
@@ -122,7 +129,9 @@ function renderPerfil() {
       ${f.barbeiros.map((b, i) => `
         <div class="barber-card" id="barber-${i}" onclick="selecionarBarbeiro(${i})">
           <div class="selected-badge">Selecionado</div>
-          <div class="barber-photo">${b.emoji}</div>
+          <div class="barber-photo">
+            ${b.foto ? `<img src="${b.foto}" alt="${b.nome}">` : (b.emoji || '✂️')}
+          </div>
           <div class="barber-info">
             <div class="barber-name">${b.nome}</div>
             <div class="barber-specialty">${b.especialidade}</div>

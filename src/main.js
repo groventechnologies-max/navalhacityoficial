@@ -877,10 +877,28 @@ window.confirmarAgendamento = async () => {
       `
     }
     goToStep(4)
+
+    // — WhatsApp: envia msg de confirmação pro número da unidade
+    const wap = state.filial.whatsapp
+    if (wap) {
+      const msg = [
+        `✂️ *Novo Agendamento — Navalha City*`,
+        ``,
+        `👤 *Cliente:* ${nome}`,
+        `📞 *WhatsApp:* ${tel}`,
+        `📌 *Unidade:* ${state.filial.nome}`,
+        `🗪️ *Barbeiro:* ${state.barbeiro.nome}`,
+        `💈 *Serviço:* ${state.servico.nome} (${state.servico.preco})`,
+        `📅 *Data:* ${state.dia} às ${state.horario}`,
+        document.getElementById('clientObs')?.value.trim()
+          ? `📝 *Obs:* ${document.getElementById('clientObs').value.trim()}`
+          : null,
+      ].filter(Boolean).join('\n')
+      window.open(`https://wa.me/${wap}?text=${encodeURIComponent(msg)}`, '_blank')
+    }
   } catch (err) {
     alert('Erro ao confirmar: ' + (err.message || 'Tente novamente.'))
     btn.textContent = 'Confirmar Agendamento'
-    btn.disabled    = false
   }
 }
 

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Navalha City</title>
+  <link rel="icon" type="image/jpeg" href="/src/logo.jpeg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --dark: #111111;
+      --card: #161616;
+      --border: #242424;
+      --orange: #ffffff;
+      --orange-dim: #cccccc;
+      --white: #f0ece4;
+      --muted: #888;
+      --text: #ccc;
+      --green: #2ecc71;
+      --yellow: #f39c12;
+      --red: #e74c3c;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { min-height: 100%; background: var(--black); color: var(--text); font-family: 'Barlow', sans-serif; }
+
+    /* NAV */
+    .dash-nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .dash-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--white); letter-spacing: 3px; text-decoration: none; }
+    .dash-logo span { color: var(--orange); }
+    .dash-nav-right { display: flex; align-items: center; gap: 16px; }
+    .dash-role-badge {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 2px;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .dash-role-badge.admin { border-color: var(--orange); color: var(--orange); }
+    .dash-role-badge.gerente { border-color: var(--yellow); color: var(--yellow); }
+    .dash-role-badge.barbeiro { border-color: #aaa; color: #aaa; }
+    .dash-user-name { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1px; color: var(--white); }
+    .btn-logout {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
+      text-transform: uppercase; background: none; border: 1px solid var(--border);
+      color: var(--muted); padding: 6px 14px; border-radius: 2px; cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+    .btn-logout:hover { color: var(--red); border-color: var(--red); }
+    .btn-back-home {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
+      text-transform: uppercase; background: none; border: none;
+      color: var(--muted); cursor: pointer; text-decoration: none;
+      transition: color .2s;
+    }
+    .btn-back-home:hover { color: var(--white); }
+
+    /* BLOQUEIO */
+    #accessDenied {
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 80vh; text-align: center; gap: 16px;
+    }
+    #accessDenied .icon { font-size: 48px; }
+    #accessDenied h2 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--white); letter-spacing: 3px; }
+    #accessDenied p { color: var(--muted); font-size: 14px; }
+    #loadingScreen {
+      display: flex; align-items: center; justify-content: center; min-height: 80vh;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--muted);
+    }
+
+    /* CONTEÚDO */
+    #dashContent { display: none; padding: 32px; max-width: 1100px; margin: 0 auto; }
+
+    .dash-header { margin-bottom: 28px; }
+    .dash-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; color: var(--white); letter-spacing: 4px; line-height: 1; }
+    .dash-subtitle { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--muted); margin-top: 6px; }
+
+    /* FILTROS */
+    .dash-filters {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: center;
+    }
+    .filter-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+    .filter-select {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 1px;
+      padding: 8px 14px; border-radius: 2px; cursor: pointer; outline: none;
+    }
+    .filter-select:focus { border-color: var(--orange-dim); }
+
+    /* STATS */
+    .dash-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+      padding: 18px 20px;
+    }
+    .stat-card .stat-n { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--white); line-height: 1; }
+    .stat-card .stat-l { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); margin-top: 4px; text-transform: uppercase; }
+    .stat-card.green .stat-n { color: var(--green); }
+    .stat-card.yellow .stat-n { color: var(--yellow); }
+
+    /* TABELA */
+    .dash-table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+    .dash-table-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .dash-table-title { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+    .dash-count { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--white); }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 10px 16px; text-align: left;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px;
+      color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    tbody td {
+      padding: 12px 16px;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 0.5px;
+      color: var(--text);
+    }
+    .td-name { color: var(--white); font-weight: 600; }
+    .td-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 11px;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    .badge-confirmado { background: rgba(46,204,113,.12); color: var(--green); border: 1px solid rgba(46,204,113,.3); }
+    .badge-pendente   { background: rgba(243,156,18,.12);  color: var(--yellow); border: 1px solid rgba(243,156,18,.3); }
+    .badge-cancelado  { background: rgba(231,76,60,.12);   color: var(--red);    border: 1px solid rgba(231,76,60,.3); }
+
+    .empty-row td { text-align: center; color: var(--muted); padding: 32px; }
+
+    /* MÊS NAV */
+    .month-nav { display: flex; align-items: center; gap: 12px; }
+    .month-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      width: 32px; height: 32px; border-radius: 2px; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; transition: color .2s, border-color .2s;
+    }
+    .month-btn:hover { color: var(--white); border-color: var(--orange-dim); }
+    .month-label { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--white); letter-spacing: 2px; min-width: 160px; text-align: center; }
+
+    @media (max-width: 700px) {
+      #dashContent { padding: 16px; }
+      .dash-nav { padding: 12px 16px; }
+      thead { display: none; }
+      tbody tr { display: block; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+      tbody td { display: block; padding: 2px 0; border: none; }
+      tbody td::before { content: attr(data-label) ': '; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+      .td-name::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="dash-nav">
+    <a href="/" class="dash-logo">Navalha<span>City</span></a>
+    <div class="dash-nav-right">
+      <a href="/" class="btn-back-home">← Site</a>
+      <span class="dash-user-name" id="navUserName"></span>
+      <span class="dash-role-badge" id="navRoleBadge"></span>
+      <button class="btn-logout" onclick="dashLogout()">Sair</button>
+    </div>
+  </nav>
+
+  <div id="loadingScreen">Carregando...</div>
+
+  <div id="accessDenied">
+    <div class="icon">🔒</div>
+    <h2>Acesso Restrito</h2>
+    <p>Você não tem permissão para acessar esta área.</p>
+    <a href="/" style="color:var(--muted);font-size:13px;margin-top:8px">← Voltar ao site</a>
+  </div>
+
+  <div id="dashContent">
+    <div class="dash-header">
+      <div class="dash-title" id="dashTitle">Dashboard</div>
+      <div class="dash-subtitle" id="dashSubtitle"></div>
+    </div>
+
+    <div class="dash-filters">
+      <span class="filter-label">Mês:</span>
+      <div class="month-nav">
+        <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="month-label" id="monthLabel"></div>
+        <button class="month-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <select class="filter-select" id="filterFilial" onchange="loadDash()" style="display:none">
+        <option value="">Todas as unidades</option>
+      </select>
+      <select class="filter-select" id="filterStatus" onchange="loadDash()">
+        <option value="">Todos os status</option>
+        <option value="confirmado">Confirmado</option>
+        <option value="pendente">Pendente</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+
+    <div class="dash-stats" id="dashStats"></div>
+
+    <div class="dash-table-wrap">
+      <div class="dash-table-header">
+        <span class="dash-table-title">Agendamentos</span>
+        <span class="dash-count" id="dashCount">0</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Data / Hora</th>
+            <th>Cliente</th>
+            <th>Serviço</th>
+            <th>Barbeiro</th>
+            <th>Unidade</th>
+            <th>Status</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody id="dashTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+    const SUPABASE_URL  = 'https://lttajvnvbnmyowvwrunw.supabase.co'
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0dGFqdm52Ym5teW93dndydW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTk1MTQsImV4cCI6MjA5MzczNTUxNH0.oG8iO96DftAmb1hLuGSNscyG2647TbncbeuN98clKus'
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON)
+
+    const ROLES_PERMITIDOS = ['admin', 'gerente', 'barbeiro']
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+    const FILIAIS = { 1:'Unidade 1', 2:'Unidade 2', 3:'Unidade 3', 4:'Unidade 4', 5:'Unidade 5' }
+
+    let currentUser = null
+    let currentProfile = null
+    let viewMonth = new Date().getMonth()
+    let viewYear  = new Date().getFullYear()
+
+    // ── INIT ──────────────────────────────────────────────
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        showDenied()
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nome, role, filial_id')
+        .eq('id', session.user.id)
+        .single()
+
+      if (!profile || !ROLES_PERMITIDOS.includes(profile.role)) {
+        showDenied()
+        return
+      }
+
+      currentUser    = session.user
+      currentProfile = profile
+
+      // Nav
+      document.getElementById('navUserName').textContent = profile.nome.split(' ')[0]
+      const badge = document.getElementById('navRoleBadge')
+      badge.textContent = profile.role
+      badge.className = `dash-role-badge ${profile.role}`
+
+      // Título
+      document.getElementById('dashTitle').textContent =
+        profile.role === 'admin'   ? 'Dashboard — Admin' :
+        profile.role === 'gerente' ? 'Dashboard — Gerente' :
+                                     'Minha Agenda'
+
+      document.getElementById('dashSubtitle').textContent =
+        profile.role === 'admin'   ? 'Visão completa de todas as unidades' :
+        profile.role === 'gerente' ? `${FILIAIS[profile.filial_id] || 'Sua unidade'}` :
+                                     `Seus agendamentos · ${profile.nome}`
+
+      // Filtro de filial só pra admin
+      if (profile.role === 'admin') {
+        const sel = document.getElementById('filterFilial')
+        sel.style.display = 'block'
+        Object.entries(FILIAIS).forEach(([id, nome]) => {
+          const opt = document.createElement('option')
+          opt.value = id
+          opt.textContent = nome
+          sel.appendChild(opt)
+        })
+      }
+
+      updateMonthLabel()
+      document.getElementById('loadingScreen').style.display = 'none'
+      document.getElementById('dashContent').style.display = 'block'
+      await loadDash()
+    }
+
+    function showDenied() {
+      document.getElementById('loadingScreen').style.display = 'none'
+      document.getElementById('accessDenied').style.display = 'flex'
+    }
+
+    // ── MÊS ──────────────────────────────────────────────
+    function updateMonthLabel() {
+      document.getElementById('monthLabel').textContent = `${MESES[viewMonth]} ${viewYear}`
+    }
+
+    window.changeMonth = (dir) => {
+      viewMonth += dir
+      if (viewMonth > 11) { viewMonth = 0;  viewYear++ }
+      if (viewMonth < 0)  { viewMonth = 11; viewYear-- }
+      updateMonthLabel()
+      loadDash()
+    }
+
+    // ── CARREGAR DADOS ────────────────────────────────────
+    window.loadDash = async () => {
+      const tbody  = document.getElementById('dashTableBody')
+      const stats  = document.getElementById('dashStats')
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">Carregando...</td></tr>`
+      stats.innerHTML = ''
+
+      const inicio = new Date(viewYear, viewMonth, 1).toISOString()
+      const fim    = new Date(viewYear, viewMonth + 1, 0, 23, 59, 59).toISOString()
+
+      let query = supabase
+        .from('agendamentos')
+        .select('id, horario, servico, barbeiro, preco, status, filial_id, observacoes, profiles(nome, telefone)')
+        .gte('horario', inicio)
+        .lte('horario', fim)
+        .order('horario', { ascending: true })
+
+      // Filtros por role
+      if (currentProfile.role === 'gerente') {
+        query = query.eq('filial_id', currentProfile.filial_id)
+      } else if (currentProfile.role === 'barbeiro') {
+        query = query.eq('barbeiro', currentProfile.nome)
+      } else {
+        // admin: filtro opcional por filial
+        const filialSel = document.getElementById('filterFilial').value
+        if (filialSel) query = query.eq('filial_id', parseInt(filialSel))
+      }
+
+      // Filtro status
+      const statusSel = document.getElementById('filterStatus').value
+      if (statusSel) query = query.eq('status', statusSel)
+
+      const { data, error } = await query
+
+      if (error) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Erro ao carregar dados.</td></tr>`
+        return
+      }
+
+      // Stats
+      const total      = data.length
+      const confirmados = data.filter(r => r.status === 'confirmado').length
+      const pendentes   = data.filter(r => r.status === 'pendente').length
+      const receita     = data
+        .filter(r => r.status === 'confirmado')
+        .reduce((sum, r) => sum + (parseFloat(r.preco?.replace(/[^\d,]/g,'').replace(',','.')) || 0), 0)
+
+      stats.innerHTML = `
+        <div class="stat-card"><div class="stat-n">${total}</div><div class="stat-l">Total do mês</div></div>
+        <div class="stat-card green"><div class="stat-n">${confirmados}</div><div class="stat-l">Confirmados</div></div>
+        <div class="stat-card yellow"><div class="stat-n">${pendentes}</div><div class="stat-l">Pendentes</div></div>
+        <div class="stat-card"><div class="stat-n">R$&nbsp;${receita.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.')}</div><div class="stat-l">Receita confirmada</div></div>
+      `
+
+      document.getElementById('dashCount').textContent = total
+
+      if (!data.length) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Nenhum agendamento neste período.</td></tr>`
+        return
+      }
+
+      tbody.innerHTML = data.map(row => {
+        const d    = new Date(row.horario)
+        const data_fmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`
+        const hora_fmt = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+        const cliente  = row.profiles?.nome || '—'
+        const tel      = row.profiles?.telefone || ''
+        const filial   = FILIAIS[row.filial_id] || `Unidade ${row.filial_id}`
+        const badgeCls = `td-badge badge-${row.status}`
+        return `
+          <tr>
+            <td data-label="Data"><b>${data_fmt}</b> ${hora_fmt}</td>
+            <td data-label="Cliente" class="td-name">${esc(cliente)}${tel ? `<br><span style="color:var(--muted);font-size:11px;font-weight:400">${esc(tel)}</span>` : ''}</td>
+            <td data-label="Serviço">${esc(row.servico)}</td>
+            <td data-label="Barbeiro">${esc(row.barbeiro)}</td>
+            <td data-label="Unidade">${esc(filial)}</td>
+            <td data-label="Status"><span class="${badgeCls}">${row.status}</span></td>
+            <td data-label="Valor">${esc(row.preco)}</td>
+          </tr>
+        `
+      }).join('')
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    }
+
+    window.dashLogout = async () => {
+      await supabase.auth.signOut()
+      window.location.href = '/'
+    }
+
+    init()
+  </script>
+</body>
+</html>

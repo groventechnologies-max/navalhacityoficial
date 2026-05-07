@@ -1,4 +1,5 @@
-import { DATA } from './data.js';
+import { DATA } from './data.js'
+import { supabase } from './supabase.js'
 
 // ─── UTILS ───────────────────────────────────────────────
 function escapeHTML(str) {
@@ -7,13 +8,18 @@ function escapeHTML(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/'/g, '&#39;')
+}
+
+function isPhone(str) {
+  // Se não tem @, trata como telefone
+  return !/\S+@\S+\.\S+/.test(str)
 }
 
 // ─── STATE ───────────────────────────────────────────────
-let currentStep = 0;
-let isLoggedIn = false;
-let currentUser = null;
+let currentStep = 0
+let isLoggedIn  = false
+let currentUser = null  // { nome, telefone, role, filial_id }
 
 const state = {
   filial:   null,
@@ -21,26 +27,195 @@ const state = {
   servico:  null,
   dia:      null,
   horario:  null,
-};
+}
+
+// ─── AUTH: carregar sessão existente ─────────────────────
+async function loadSession() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session) await applySession(session)
+}
+
+async function applySession(session) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('nome, telefone, role, filial_id')
+    .eq('id', session.user.id)
+    .single()
+
+  if (profile) {
+    currentUser = {
+      nome:      profile.nome,
+      telefone:  profile.telefone || '',
+      role:      profile.role,
+      filial_id: profile.filial_id,
+    }
+    isLoggedIn = true
+    updateNavLoginBtns()
+  }
+}
+
+function updateNavLoginBtns() {
+  document.querySelectorAll('.nav-login-btn').forEach(btn => {
+    if (isLoggedIn && currentUser) {
+      btn.textContent = currentUser.nome.split(' ')[0]
+      btn.classList.add('logged')
+    } else {
+      btn.textContent = 'Login'
+      btn.classList.remove('logged')
+    }
+  })
+}
+
+// ─── AUTH: registro ──────────────────────────────────────
+async function handleRegister(nome, email, telefone, senha) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: senha,
+    options: {
+      data: { nome, telefone },
+    },
+  })
+
+  if (error) throw new Error(error.message)
+
+  // O trigger no banco cria o profile automaticamente.
+  // Setamos o currentUser localmente enquanto a sessão não dispara o listener.
+  currentUser = { nome, telefone, role: 'cliente', filial_id: null }
+  isLoggedIn  = true
+}
+
+// ─── AUTH: login ─────────────────────────────────────────
+async function handleLogin(identifier, senha) {
+  let email = identifier
+
+  if (isPhone(identifier)) {
+    // Busca o email pelo telefone via função SQL
+    const { data, error } = await supabase.rpc('get_email_by_phone', {
+      p_telefone: identifier,
+    })
+    if (error || !data) throw new Error('Telefone não encontrado.')
+    email = data
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
+  if (error) throw new Error('Email/telefone ou senha incorretos.')
+
+  await applySession(data.session)
+}
+
+// ─── AUTH: logout ────────────────────────────────────────
+async function handleLogout() {
+  await supabase.auth.signOut()
+  isLoggedIn  = false
+  currentUser = null
+  updateNavLoginBtns()
+  const confirmSection = document.getElementById('confirmSection')
+  if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
+}
+
+// ─── MODAL DE LOGIN ──────────────────────────────────────
+window.openLoginModal = (mode = 'login') => {
+  const modal = document.getElementById('loginModal')
+  if (!modal) return
+  modal.classList.add('open')
+  applyLoginMode(mode)
+  ;['loginNome', 'loginIdentifier', 'loginEmail', 'loginTel', 'loginSenha'].forEach(id => {
+    const el = document.getElementById(id)
+    if (el) el.value = ''
+  })
+}
+
+function applyLoginMode(mode) {
+  document.getElementById('loginModalMode').value = mode
+  const isReg = mode === 'register'
+  document.getElementById('loginModalTitle').textContent = isReg ? 'Criar conta' : 'Entrar na conta'
+  document.getElementById('loginModalBtn').textContent   = isReg ? 'Criar conta' : 'Entrar'
+  document.getElementById('fieldNome').style.display        = isReg ? 'block' : 'none'
+  document.getElementById('fieldEmail').style.display       = isReg ? 'block' : 'none'
+  document.getElementById('fieldWhats').style.display       = isReg ? 'block' : 'none'
+  document.getElementById('fieldIdentifier').style.display  = isReg ? 'none'  : 'block'
+  document.getElementById('loginSwitchText').textContent    = isReg ? 'Já tem conta?' : 'Não tem conta?'
+  document.getElementById('loginSwitchLink').textContent    = isReg ? 'Fazer login' : 'Criar conta grátis'
+}
+
+window.toggleLoginMode = () => {
+  const current = document.getElementById('loginModalMode').value
+  applyLoginMode(current === 'login' ? 'register' : 'login')
+  ;['loginNome', 'loginIdentifier', 'loginEmail', 'loginTel', 'loginSenha'].forEach(id => {
+    const el = document.getElementById(id)
+    if (el) el.value = ''
+  })
+}
+
+window.toggleSenha = () => {
+  const input = document.getElementById('loginSenha')
+  input.type = input.type === 'password' ? 'text' : 'password'
+}
+
+window.closeLoginModal = () => {
+  const modal = document.getElementById('loginModal')
+  if (modal) modal.classList.remove('open')
+}
+
+window.submitLogin = async () => {
+  const mode  = document.getElementById('loginModalMode').value
+  const senha = document.getElementById('loginSenha').value.trim()
+  const btn   = document.getElementById('loginModalBtn')
+
+  if (!senha) { alert('Informe sua senha.'); return }
+
+  btn.textContent = 'Aguarde...'
+  btn.disabled    = true
+
+  try {
+    if (mode === 'register') {
+      const nome     = document.getElementById('loginNome').value.trim()
+      const email    = document.getElementById('loginEmail').value.trim()
+      const telefone = document.getElementById('loginTel').value.trim()
+
+      if (!nome || !email || !telefone) {
+        alert('Preencha todos os campos.')
+        return
+      }
+
+      await handleRegister(nome, email, telefone, senha)
+
+    } else {
+      const identifier = document.getElementById('loginIdentifier').value.trim()
+      if (!identifier) { alert('Informe seu WhatsApp ou e-mail.'); return }
+      await handleLogin(identifier, senha)
+    }
+
+    closeLoginModal()
+    updateNavLoginBtns()
+    const confirmSection = document.getElementById('confirmSection')
+    if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
+
+  } catch (err) {
+    alert(err.message || 'Erro inesperado. Tente novamente.')
+  } finally {
+    btn.textContent = mode === 'register' ? 'Criar conta' : 'Entrar'
+    btn.disabled    = false
+  }
+}
+
+window.logoutUser = () => handleLogout()
 
 // ─── NAVEGAÇÃO ───────────────────────────────────────────
 function goToStep(n) {
-  if (n === currentStep) return;
-
-  const from = document.getElementById(`step-${currentStep}`);
-  const to   = document.getElementById(`step-${n}`);
-
-  from.classList.remove('active');
-  to.classList.add('active');
-  to.scrollTop = 0;
-  window.scrollTo(0, 0);
-
-  currentStep = n;
+  if (n === currentStep) return
+  const from = document.getElementById(`step-${currentStep}`)
+  const to   = document.getElementById(`step-${n}`)
+  from.classList.remove('active')
+  to.classList.add('active')
+  to.scrollTop = 0
+  window.scrollTo(0, 0)
+  currentStep = n
 }
 
 // ─── STEP 1: FILIAIS ─────────────────────────────────────
 function renderFiliais() {
-  const el = document.getElementById('filiaisList');
+  const el = document.getElementById('filiaisList')
 
   el.innerHTML = Array(5).fill(0).map(() => `
     <div class="filial-item sk-card">
@@ -54,7 +229,7 @@ function renderFiliais() {
         </div>
       </div>
     </div>
-  `).join('');
+  `).join('')
 
   setTimeout(() => {
     el.innerHTML = DATA.filiais.map(f => `
@@ -88,27 +263,27 @@ function renderFiliais() {
           </div>
         </div>
       </div>
-    `).join('');
-  }, 600);
+    `).join('')
+  }, 600)
 }
 
 window.toggleFilial = (id) => {
-  const el     = document.getElementById(`filial-${id}`);
-  const isOpen = el.classList.contains('open');
-  document.querySelectorAll('.filial-item').forEach(i => i.classList.remove('open'));
-  if (!isOpen) el.classList.add('open');
-};
+  const el     = document.getElementById(`filial-${id}`)
+  const isOpen = el.classList.contains('open')
+  document.querySelectorAll('.filial-item').forEach(i => i.classList.remove('open'))
+  if (!isOpen) el.classList.add('open')
+}
 
 window.selecionarFilial = (id) => {
-  state.filial   = DATA.filiais.find(f => f.id === id);
-  state.barbeiro = null;
-  renderPerfil();
-  goToStep(2);
-};
+  state.filial   = DATA.filiais.find(f => f.id === id)
+  state.barbeiro = null
+  renderPerfil()
+  goToStep(2)
+}
 
 // ─── STEP 2: PERFIL + BARBEIROS ──────────────────────────
 function renderPerfil() {
-  const f = state.filial;
+  const f = state.filial
 
   document.getElementById('profileContent').innerHTML = `
     <div class="section-label">${f.nome} — ${f.regiao}</div>
@@ -122,10 +297,10 @@ function renderPerfil() {
           { key: 'cadeira',   label: 'Cadeira' },
           { key: 'produtos',  label: 'Produtos' },
         ].map(({ key, label }) => {
-          const url = f.fotos && f.fotos[key];
+          const url = f.fotos && f.fotos[key]
           return `<div class="photo-placeholder${url ? ' has-photo' : ''}" data-label="${label}">
             ${url ? `<img src="${url}" alt="${label}">` : ''}
-          </div>`;
+          </div>`
         }).join('')}
       </div>
       <button class="photo-nav photo-nav-prev" onclick="scrollPhotos(-1)">←</button>
@@ -172,27 +347,27 @@ function renderPerfil() {
       <div class="logo-ft">Navalha<span>City</span></div>
       <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela <a href="https://groven.netlify.app/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;opacity:0.7;">Groven</a></div>
     </footer>
-  `;
+  `
 }
 
 window.scrollPhotos = (dir) => {
-  const el = document.getElementById('photosCarousel');
-  if (!el) return;
-  el.scrollBy({ left: dir * el.offsetWidth, behavior: 'smooth' });
+  const el = document.getElementById('photosCarousel')
+  if (!el) return
+  el.scrollBy({ left: dir * el.offsetWidth, behavior: 'smooth' })
   setTimeout(() => {
-    const idx = Math.round(el.scrollLeft / el.offsetWidth) + 1;
-    const counter = document.getElementById('photoCounter');
-    if (counter) counter.textContent = `${idx} / 5`;
-  }, 320);
-};
+    const idx     = Math.round(el.scrollLeft / el.offsetWidth) + 1
+    const counter = document.getElementById('photoCounter')
+    if (counter) counter.textContent = `${idx} / 5`
+  }, 320)
+}
 
 window.selecionarBarbeiro = (idx) => {
-  document.querySelectorAll('.barber-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById(`barber-${idx}`).classList.add('selected');
-  state.barbeiro = state.filial.barbeiros[idx];
-  renderAgendamento();
-  goToStep(3);
-};
+  document.querySelectorAll('.barber-card').forEach(c => c.classList.remove('selected'))
+  document.getElementById(`barber-${idx}`).classList.add('selected')
+  state.barbeiro = state.filial.barbeiros[idx]
+  renderAgendamento()
+  goToStep(3)
+}
 
 // ─── STEP 3: AGENDAMENTO ─────────────────────────────────
 function renderAgendamento() {
@@ -237,8 +412,8 @@ function renderAgendamento() {
           <div class="service-item${s.badge ? ' has-badge' : ''}" id="svc-${i}" onclick="selecionarServico(${i})">
             ${s.badge ? `<span class="svc-badge">${s.badge}</span>` : ''}
             <div class="svc-row">
-            <span class="service-name">${s.nome}</span>
-            <span class="service-price">${s.preco}</span>
+              <span class="service-name">${s.nome}</span>
+              <span class="service-price">${s.preco}</span>
             </div>
           </div>
         `).join('')}
@@ -261,9 +436,9 @@ function renderAgendamento() {
       <div class="logo-ft">Navalha<span>City</span></div>
       <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela <a href="https://groven.netlify.app/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;opacity:0.7;">Groven</a></div>
     </footer>
-  `;
+  `
 
-  renderDias();
+  renderDias()
 }
 
 function renderConfirmSection() {
@@ -276,7 +451,7 @@ function renderConfirmSection() {
         <button class="btn-login-wall" onclick="openLoginModal()">Entrar na minha conta</button>
         <div class="login-wall-register">Não tem conta? <a href="#" onclick="openLoginModal('register'); return false;">Criar conta grátis</a></div>
       </div>
-    `;
+    `
   }
   return `
     <div class="confirm-form">
@@ -289,141 +464,55 @@ function renderConfirmSection() {
       </div>
       <h4>Confirme seus dados</h4>
       <div class="form-row">
-        <input class="form-input" type="text" id="clientName" placeholder="Seu nome completo" value="${escapeHTML(currentUser.nome)}">
-        <input class="form-input" type="tel"  id="clientPhone" placeholder="WhatsApp" value="${escapeHTML(currentUser.telefone)}">
+        <input class="form-input" type="text" id="clientName"  placeholder="Seu nome completo" value="${escapeHTML(currentUser.nome)}">
+        <input class="form-input" type="tel"  id="clientPhone" placeholder="WhatsApp"          value="${escapeHTML(currentUser.telefone)}">
       </div>
       <textarea class="form-input" rows="3" id="clientObs" placeholder="Observações (opcional)" style="resize:none;width:100%"></textarea>
       <button class="btn-confirm" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
     </div>
-  `;
+  `
 }
-
-window.openLoginModal = (mode = 'login') => {
-  const modal = document.getElementById('loginModal');
-  if (!modal) return;
-  modal.classList.add('open');
-  applyLoginMode(mode);
-  // Limpa campos
-  ['loginNome','loginIdentifier','loginEmail','loginTel','loginSenha'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-};
-
-function applyLoginMode(mode) {
-  document.getElementById('loginModalMode').value = mode;
-  const isReg = mode === 'register';
-  document.getElementById('loginModalTitle').textContent = isReg ? 'Criar conta' : 'Entrar na conta';
-  document.getElementById('loginModalBtn').textContent   = isReg ? 'Criar conta' : 'Entrar';
-  document.getElementById('fieldNome').style.display        = isReg ? 'block' : 'none';
-  document.getElementById('fieldEmail').style.display       = isReg ? 'block' : 'none';
-  document.getElementById('fieldWhats').style.display       = isReg ? 'block' : 'none';
-  document.getElementById('fieldIdentifier').style.display  = isReg ? 'none'  : 'block';
-  document.getElementById('loginSwitchText').textContent    = isReg ? 'Já tem conta?' : 'Não tem conta?';
-  document.getElementById('loginSwitchLink').textContent    = isReg ? 'Fazer login' : 'Criar conta grátis';
-}
-
-window.toggleLoginMode = () => {
-  const current = document.getElementById('loginModalMode').value;
-  applyLoginMode(current === 'login' ? 'register' : 'login');
-  ['loginNome','loginIdentifier','loginEmail','loginTel','loginSenha'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-};
-
-window.toggleSenha = () => {
-  const input = document.getElementById('loginSenha');
-  input.type = input.type === 'password' ? 'text' : 'password';
-};
-
-window.closeLoginModal = () => {
-  const modal = document.getElementById('loginModal');
-  if (modal) modal.classList.remove('open');
-};
-
-window.submitLogin = () => {
-  const mode = document.getElementById('loginModalMode').value;
-  const senha = document.getElementById('loginSenha').value.trim();
-  if (!senha) { alert('Informe sua senha.'); return; }
-
-  let nome, telefone;
-  if (mode === 'register') {
-    nome     = document.getElementById('loginNome').value.trim();
-    const email = document.getElementById('loginEmail').value.trim();
-    telefone = document.getElementById('loginTel').value.trim();
-    if (!nome || !email || !telefone) { alert('Preencha todos os campos.'); return; }
-  } else {
-    const identifier = document.getElementById('loginIdentifier').value.trim();
-    if (!identifier) { alert('Informe seu WhatsApp ou e-mail.'); return; }
-    nome     = identifier.split('@')[0].split('(')[0].trim() || 'Usuário';
-    telefone = identifier;
-  }
-
-  isLoggedIn  = true;
-  currentUser = { nome, telefone };
-  saveSession(currentUser);
-  document.querySelectorAll('.nav-login-btn').forEach(btn => {
-    btn.textContent = nome.split(' ')[0];
-    btn.classList.add('logged');
-  });
-  closeLoginModal();
-  const confirmSection = document.getElementById('confirmSection');
-  if (confirmSection) confirmSection.innerHTML = renderConfirmSection();
-};
-
-window.logoutUser = () => {
-  isLoggedIn  = false;
-  currentUser = null;
-  clearSession();
-  document.querySelectorAll('.nav-login-btn').forEach(btn => {
-    btn.textContent = 'Login';
-    btn.classList.remove('logged');
-  });
-  const confirmSection = document.getElementById('confirmSection');
-  if (confirmSection) confirmSection.innerHTML = renderConfirmSection();
-};
 
 window.selecionarServico = (i) => {
-  document.querySelectorAll('.service-item').forEach(s => s.classList.remove('selected'));
-  document.getElementById(`svc-${i}`).classList.add('selected');
-  state.servico = DATA.servicos[i];
-};
+  document.querySelectorAll('.service-item').forEach(s => s.classList.remove('selected'))
+  document.getElementById(`svc-${i}`).classList.add('selected')
+  state.servico = DATA.servicos[i]
+}
 
 function renderDias() {
-  const weekdays = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const today    = new Date();
+  const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+  const today    = new Date()
 
   document.getElementById('daysStrip').innerHTML = Array.from({ length: 14 }, (_, i) => {
-    const d  = new Date(today);
-    d.setDate(today.getDate() + i + 1);
-    const wd = weekdays[d.getDay()];
-    const dn = d.getDate();
+    const d  = new Date(today)
+    d.setDate(today.getDate() + i + 1)
+    const wd = weekdays[d.getDay()]
+    const dn = d.getDate()
     return `
       <div class="day-btn" id="day-${i}" onclick="selecionarDia(${i}, '${wd} ${dn}')">
         <div class="day-weekday">${wd}</div>
         <div class="day-num">${dn}</div>
       </div>
-    `;
-  }).join('');
+    `
+  }).join('')
 
-  document.getElementById('timesGrid').innerHTML = '';
+  document.getElementById('timesGrid').innerHTML = ''
 }
 
 window.selecionarDia = (i, label) => {
-  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
-  document.getElementById(`day-${i}`).classList.add('selected');
-  state.dia = label;
-  renderHorarios();
-  const bar  = document.getElementById('availBar');
-  const text = document.getElementById('availText');
-  if (bar)  bar.classList.add('active');
-  if (text) text.textContent = '15 horários disponíveis';
-};
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'))
+  document.getElementById(`day-${i}`).classList.add('selected')
+  state.dia = label
+  renderHorarios()
+  const bar  = document.getElementById('availBar')
+  const text = document.getElementById('availText')
+  if (bar)  bar.classList.add('active')
+  if (text) text.textContent = '15 horários disponíveis'
+}
 
 function renderHorarios() {
-  const horarios     = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00'];
-  const indisponiveis = new Set([1, 4, 7, 12]);
+  const horarios      = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00']
+  const indisponiveis = new Set([1, 4, 7, 12])
 
   document.getElementById('timesGrid').innerHTML = horarios.map((h, i) => `
     <div class="time-btn ${indisponiveis.has(i) ? 'unavailable' : ''}"
@@ -431,35 +520,32 @@ function renderHorarios() {
          onclick="selecionarHorario(${i}, '${h}')">
       ${h}
     </div>
-  `).join('');
+  `).join('')
 }
 
 window.selecionarHorario = (i, h) => {
-  const btn = document.getElementById(`time-${i}`);
-  if (btn.classList.contains('unavailable')) return;
-  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  state.horario = h;
-};
+  const btn = document.getElementById(`time-${i}`)
+  if (btn.classList.contains('unavailable')) return
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'))
+  btn.classList.add('selected')
+  state.horario = h
+}
 
 // ─── CONFIRMAÇÃO ─────────────────────────────────────────
 window.confirmarAgendamento = () => {
-  const nome = document.getElementById('clientName').value.trim();
-  const tel  = document.getElementById('clientPhone').value.trim();
+  const nome = document.getElementById('clientName').value.trim()
+  const tel  = document.getElementById('clientPhone').value.trim()
 
-  if (!nome || !tel) {
-    alert('Preencha seu nome e WhatsApp.');
-    return;
-  }
+  if (!nome || !tel) { alert('Preencha seu nome e WhatsApp.'); return }
   if (!state.servico || !state.dia || !state.horario) {
-    alert('Selecione o serviço, a data e o horário.');
-    return;
+    alert('Selecione o serviço, a data e o horário.')
+    return
   }
 
-  const btn = document.querySelector('#confirmSection .btn-confirm');
-  if (!btn) return;
-  btn.textContent = 'Reservando...';
-  btn.disabled = true;
+  const btn = document.querySelector('#confirmSection .btn-confirm')
+  if (!btn) return
+  btn.textContent = 'Reservando...'
+  btn.disabled    = true
 
   setTimeout(() => {
     document.getElementById('confirmDetails').innerHTML = `
@@ -469,74 +555,68 @@ window.confirmarAgendamento = () => {
       <div><strong>Serviço:</strong> ${escapeHTML(state.servico.nome)} — <span class="hl">${escapeHTML(state.servico.preco)}</span></div>
       <div><strong>Data:</strong> ${escapeHTML(state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
       <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação enviada para <span class="hl">${escapeHTML(tel)}</span></div>
-    `;
-    goToStep(4);
-  }, 1000);
-};
+    `
+    goToStep(4)
+  }, 1000)
+}
 
 // ─── RESET ───────────────────────────────────────────────
 function resetFlow() {
-  Object.assign(state, { filial: null, barbeiro: null, servico: null, dia: null, horario: null });
-  goToStep(0);
+  Object.assign(state, { filial: null, barbeiro: null, servico: null, dia: null, horario: null })
+  goToStep(0)
 }
 
-// ─── PERSISTÊNCIA DE LOGIN ──────────────────────────────
-function loadSession() {
-  try {
-    const saved = localStorage.getItem('navalhacity_user');
-    if (saved) {
-      currentUser = JSON.parse(saved);
-      isLoggedIn  = true;
+// ─── INIT ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  // Carrega sessão do Supabase (persiste entre reloads)
+  await loadSession()
+
+  renderFiliais()
+
+  // Listener de mudança de auth (login/logout em outra aba, etc.)
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    if (session) {
+      await applySession(session)
+    } else {
+      isLoggedIn  = false
+      currentUser = null
+      updateNavLoginBtns()
     }
-  } catch (e) { /* ignora */ }
-}
-
-function saveSession(user) {
-  try { localStorage.setItem('navalhacity_user', JSON.stringify(user)); } catch (e) { /* ignora */ }
-}
-
-function clearSession() {
-  try { localStorage.removeItem('navalhacity_user'); } catch (e) { /* ignora */ }
-}
-
-// ─── INIT ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadSession();
-  renderFiliais();
+  })
 
   // Login modal overlay click
-  document.getElementById('loginModal').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeLoginModal();
-  });
+  document.getElementById('loginModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeLoginModal()
+  })
 
   // Nav login buttons
   document.querySelectorAll('.nav-login-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (isLoggedIn) logoutUser();
-      else openLoginModal();
-    });
-  });
+      if (isLoggedIn) logoutUser()
+      else openLoginModal()
+    })
+  })
 
-  document.getElementById('btnAgendar').addEventListener('click', () => goToStep(1));
-  document.getElementById('back1').addEventListener('click',     () => goToStep(0));
-  document.getElementById('back2').addEventListener('click',     () => goToStep(1));
-  document.getElementById('back3').addEventListener('click',     () => goToStep(2));
-  document.getElementById('btnReset').addEventListener('click',  resetFlow);
+  document.getElementById('btnAgendar').addEventListener('click', () => goToStep(1))
+  document.getElementById('back1').addEventListener('click',      () => goToStep(0))
+  document.getElementById('back2').addEventListener('click',      () => goToStep(1))
+  document.getElementById('back3').addEventListener('click',      () => goToStep(2))
+  document.getElementById('btnReset').addEventListener('click',   resetFlow)
 
   // Swipe para voltar
-  let _tx = null, _ty = null;
+  let _tx = null, _ty = null
   document.addEventListener('touchstart', e => {
-    if (e.target.closest('.profile-photos') || e.target.closest('.days-strip')) { _tx = null; return; }
-    _tx = e.changedTouches[0].screenX;
-    _ty = e.changedTouches[0].screenY;
-  }, { passive: true });
+    if (e.target.closest('.profile-photos') || e.target.closest('.days-strip')) { _tx = null; return }
+    _tx = e.changedTouches[0].screenX
+    _ty = e.changedTouches[0].screenY
+  }, { passive: true })
   document.addEventListener('touchend', e => {
-    if (_tx === null) return;
-    const dx = e.changedTouches[0].screenX - _tx;
-    const dy = e.changedTouches[0].screenY - _ty;
+    if (_tx === null) return
+    const dx = e.changedTouches[0].screenX - _tx
+    const dy = e.changedTouches[0].screenY - _ty
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 0 && currentStep > 0) {
-      goToStep(currentStep - 1);
+      goToStep(currentStep - 1)
     }
-    _tx = null;
-  }, { passive: true });
-});
+    _tx = null
+  }, { passive: true })
+})

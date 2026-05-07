@@ -16,9 +16,10 @@ function isPhone(str) {
 }
 
 // ─── STATE ───────────────────────────────────────────────
-let currentStep = 0
-let isLoggedIn  = false
-let currentUser = null
+let currentStep    = 0
+let isLoggedIn     = false
+let currentUser    = null
+let sessionLoading = false  // guarda contra dupla chamada
 
 const state = {
   filial:   null,
@@ -35,21 +36,30 @@ async function loadSession() {
 }
 
 async function applySession(session) {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('nome, telefone, role, filial_id')
-    .eq('id', session.user.id)
-    .single()
+  // Evita chamadas simultâneas (race condition entre loadSession e onAuthStateChange)
+  if (sessionLoading) return
+  sessionLoading = true
 
-  if (profile) {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nome, telefone, role, filial_id')
+      .eq('id', session.user.id)
+      .single()
+
+    // Fallback para metadata do auth caso o trigger ainda não tenha rodado
+    const meta = session.user.user_metadata || {}
+
     currentUser = {
-      nome:      profile.nome,
-      telefone:  profile.telefone || '',
-      role:      profile.role,
-      filial_id: profile.filial_id,
+      nome:      profile?.nome      || meta.nome      || session.user.email?.split('@')[0] || 'Usuário',
+      telefone:  profile?.telefone  || meta.telefone  || '',
+      role:      profile?.role      || 'cliente',
+      filial_id: profile?.filial_id || null,
     }
     isLoggedIn = true
     updateNavLoginBtns()
+  } finally {
+    sessionLoading = false
   }
 }
 
@@ -66,19 +76,23 @@ function updateNavLoginBtns() {
 }
 
 // ─── AUTH: registro ──────────────────────────────────────
+// Retorna { needsConfirm: true } quando precisa confirmar email
 async function handleRegister(nome, email, telefone, senha) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password: senha,
-    options: {
-      data: { nome, telefone },
-    },
+    options: { data: { nome, telefone } },
   })
 
   if (error) throw new Error(error.message)
 
-  // Loga automaticamente após registro (confirmação de email desativada)
-  if (data.session) await applySession(data.session)
+  if (data.session) {
+    await applySession(data.session)
+    return { needsConfirm: false }
+  } else {
+    // Sem sessão — Supabase está com confirmação de email ativa
+    return { needsConfirm: true }
+  }
 }
 
 // ─── AUTH: login ─────────────────────────────────────────
@@ -89,14 +103,17 @@ async function handleLogin(identifier, senha) {
     const { data, error } = await supabase.rpc('get_email_by_phone', {
       p_telefone: identifier,
     })
-    if (error || !data) throw new Error('Telefone não encontrado.')
+    if (error || !data) throw new Error('Telefone não encontrado. Tente com o e-mail.')
     email = data
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
 
   if (error) {
-    throw new Error('Email/telefone ou senha incorretos.')
+    if (error.message === 'Email not confirmed') {
+      throw new Error('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.')
+    }
+    throw new Error('E-mail/telefone ou senha incorretos.')
   }
 
   await applySession(data.session)
@@ -122,19 +139,20 @@ window.openLoginModal = (mode = 'login') => {
     const el = document.getElementById(id)
     if (el) el.value = ''
   })
+  clearModalMessage()
 }
 
 function applyLoginMode(mode) {
   document.getElementById('loginModalMode').value = mode
   const isReg = mode === 'register'
-  document.getElementById('loginModalTitle').textContent = isReg ? 'Criar conta' : 'Entrar na conta'
-  document.getElementById('loginModalBtn').textContent   = isReg ? 'Criar conta' : 'Entrar'
+  document.getElementById('loginModalTitle').textContent    = isReg ? 'Criar conta'    : 'Entrar na conta'
+  document.getElementById('loginModalBtn').textContent      = isReg ? 'Criar conta'    : 'Entrar'
   document.getElementById('fieldNome').style.display        = isReg ? 'block' : 'none'
   document.getElementById('fieldEmail').style.display       = isReg ? 'block' : 'none'
   document.getElementById('fieldWhats').style.display       = isReg ? 'block' : 'none'
   document.getElementById('fieldIdentifier').style.display  = isReg ? 'none'  : 'block'
-  document.getElementById('loginSwitchText').textContent    = isReg ? 'Já tem conta?' : 'Não tem conta?'
-  document.getElementById('loginSwitchLink').textContent    = isReg ? 'Fazer login' : 'Criar conta grátis'
+  document.getElementById('loginSwitchText').textContent    = isReg ? 'Já tem conta?'  : 'Não tem conta?'
+  document.getElementById('loginSwitchLink').textContent    = isReg ? 'Fazer login'    : 'Criar conta grátis'
 }
 
 window.toggleLoginMode = () => {
@@ -144,6 +162,7 @@ window.toggleLoginMode = () => {
     const el = document.getElementById(id)
     if (el) el.value = ''
   })
+  clearModalMessage()
 }
 
 window.toggleSenha = () => {
@@ -156,7 +175,7 @@ window.closeLoginModal = () => {
   if (modal) modal.classList.remove('open')
 }
 
-// ─── MOSTRAR MENSAGEM NO MODAL ───────────────────────────
+// ─── MENSAGENS NO MODAL ──────────────────────────────────
 function showModalMessage(text, type = 'error') {
   let el = document.getElementById('loginModalMsg')
   if (!el) {
@@ -173,6 +192,7 @@ function showModalMessage(text, type = 'error') {
     font-size: 13px;
     letter-spacing: 1px;
     line-height: 1.5;
+    border-radius: 2px;
     border: 1px solid ${type === 'error' ? '#c0392b' : '#27ae60'};
     color: ${type === 'error' ? '#e74c3c' : '#2ecc71'};
     background: ${type === 'error' ? 'rgba(192,57,43,0.08)' : 'rgba(39,174,96,0.08)'};
@@ -184,6 +204,7 @@ function clearModalMessage() {
   if (el) el.remove()
 }
 
+// ─── SUBMIT LOGIN/REGISTRO ───────────────────────────────
 window.submitLogin = async () => {
   const mode  = document.getElementById('loginModalMode').value
   const senha = document.getElementById('loginSenha').value.trim()
@@ -193,6 +214,7 @@ window.submitLogin = async () => {
 
   if (!senha) { showModalMessage('Informe sua senha.'); return }
 
+  const originalText = btn.textContent
   btn.textContent = 'Aguarde...'
   btn.disabled    = true
 
@@ -207,33 +229,38 @@ window.submitLogin = async () => {
         return
       }
 
-      await handleRegister(nome, email, telefone, senha)
+      const result = await handleRegister(nome, email, telefone, senha)
 
-      // Fecha o modal e atualiza a UI — usuário já está logado
+      if (result.needsConfirm) {
+        // Mostra mensagem de sucesso em verde e não fecha o modal
+        showModalMessage('Conta criada! Verifique seu e-mail e clique no link de confirmação para ativar.', 'success')
+        btn.textContent = originalText
+        btn.disabled    = false
+        return
+      }
+
       closeLoginModal()
       updateNavLoginBtns()
-      const confirmSection = document.getElementById('confirmSection')
-      if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
+      const cs1 = document.getElementById('confirmSection')
+      if (cs1) cs1.innerHTML = renderConfirmSection()
 
     } else {
       const identifier = document.getElementById('loginIdentifier').value.trim()
       if (!identifier) { showModalMessage('Informe seu WhatsApp ou e-mail.'); return }
 
       await handleLogin(identifier, senha)
-
       closeLoginModal()
       updateNavLoginBtns()
-      const confirmSection = document.getElementById('confirmSection')
-      if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
+      const cs2 = document.getElementById('confirmSection')
+      if (cs2) cs2.innerHTML = renderConfirmSection()
     }
 
   } catch (err) {
     showModalMessage(err.message || 'Erro inesperado. Tente novamente.')
   } finally {
-    if (btn.disabled) {
-      btn.textContent = mode === 'register' ? 'Criar conta' : 'Entrar'
-      btn.disabled    = false
-    }
+    // Sempre reativa o botão, independente do resultado
+    btn.disabled    = false
+    btn.textContent = originalText
   }
 }
 
@@ -244,6 +271,7 @@ function goToStep(n) {
   if (n === currentStep) return
   const from = document.getElementById(`step-${currentStep}`)
   const to   = document.getElementById(`step-${n}`)
+  if (!from || !to) return
   from.classList.remove('active')
   to.classList.add('active')
   to.scrollTop = 0
@@ -307,6 +335,7 @@ function renderFiliais() {
 
 window.toggleFilial = (id) => {
   const el     = document.getElementById(`filial-${id}`)
+  if (!el) return
   const isOpen = el.classList.contains('open')
   document.querySelectorAll('.filial-item').forEach(i => i.classList.remove('open'))
   if (!isOpen) el.classList.add('open')
@@ -401,7 +430,8 @@ window.scrollPhotos = (dir) => {
 
 window.selecionarBarbeiro = (idx) => {
   document.querySelectorAll('.barber-card').forEach(c => c.classList.remove('selected'))
-  document.getElementById(`barber-${idx}`).classList.add('selected')
+  const card = document.getElementById(`barber-${idx}`)
+  if (card) card.classList.add('selected')
   state.barbeiro = state.filial.barbeiros[idx]
   renderAgendamento()
   goToStep(3)
@@ -513,23 +543,28 @@ function renderConfirmSection() {
 
 window.selecionarServico = (i) => {
   document.querySelectorAll('.service-item').forEach(s => s.classList.remove('selected'))
-  document.getElementById(`svc-${i}`).classList.add('selected')
+  const svc = document.getElementById(`svc-${i}`)
+  if (svc) svc.classList.add('selected')
   state.servico = DATA.servicos[i]
 }
 
 function renderDias() {
   const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+  const months   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
   const today    = new Date()
 
   document.getElementById('daysStrip').innerHTML = Array.from({ length: 14 }, (_, i) => {
-    const d  = new Date(today)
+    const d    = new Date(today)
     d.setDate(today.getDate() + i + 1)
-    const wd = weekdays[d.getDay()]
-    const dn = d.getDate()
+    const wd   = weekdays[d.getDay()]
+    const dn   = d.getDate()
+    const mon  = months[d.getMonth()]
+    const label = `${wd} ${dn}/${mon}`
     return `
-      <div class="day-btn" id="day-${i}" onclick="selecionarDia(${i}, '${wd} ${dn}')">
+      <div class="day-btn" id="day-${i}" onclick="selecionarDia(${i}, '${label}')">
         <div class="day-weekday">${wd}</div>
         <div class="day-num">${dn}</div>
+        <div class="day-month" style="font-size:10px;opacity:0.6">${mon}</div>
       </div>
     `
   }).join('')
@@ -539,7 +574,8 @@ function renderDias() {
 
 window.selecionarDia = (i, label) => {
   document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'))
-  document.getElementById(`day-${i}`).classList.add('selected')
+  const dayBtn = document.getElementById(`day-${i}`)
+  if (dayBtn) dayBtn.classList.add('selected')
   state.dia = label
   renderHorarios()
   const bar  = document.getElementById('availBar')
@@ -563,7 +599,7 @@ function renderHorarios() {
 
 window.selecionarHorario = (i, h) => {
   const btn = document.getElementById(`time-${i}`)
-  if (btn.classList.contains('unavailable')) return
+  if (!btn || btn.classList.contains('unavailable')) return
   document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'))
   btn.classList.add('selected')
   state.horario = h
@@ -571,8 +607,8 @@ window.selecionarHorario = (i, h) => {
 
 // ─── CONFIRMAÇÃO ─────────────────────────────────────────
 window.confirmarAgendamento = () => {
-  const nome = document.getElementById('clientName').value.trim()
-  const tel  = document.getElementById('clientPhone').value.trim()
+  const nome = document.getElementById('clientName')?.value.trim()
+  const tel  = document.getElementById('clientPhone')?.value.trim()
 
   if (!nome || !tel) { alert('Preencha seu nome e WhatsApp.'); return }
   if (!state.servico || !state.dia || !state.horario) {
@@ -586,14 +622,17 @@ window.confirmarAgendamento = () => {
   btn.disabled    = true
 
   setTimeout(() => {
-    document.getElementById('confirmDetails').innerHTML = `
-      <div><strong>Cliente:</strong> ${escapeHTML(nome)}</div>
-      <div><strong>Unidade:</strong> ${escapeHTML(state.filial.nome)}</div>
-      <div><strong>Barbeiro:</strong> ${escapeHTML(state.barbeiro.nome)}</div>
-      <div><strong>Serviço:</strong> ${escapeHTML(state.servico.nome)} — <span class="hl">${escapeHTML(state.servico.preco)}</span></div>
-      <div><strong>Data:</strong> ${escapeHTML(state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
-      <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação enviada para <span class="hl">${escapeHTML(tel)}</span></div>
-    `
+    const details = document.getElementById('confirmDetails')
+    if (details) {
+      details.innerHTML = `
+        <div><strong>Cliente:</strong> ${escapeHTML(nome)}</div>
+        <div><strong>Unidade:</strong> ${escapeHTML(state.filial.nome)}</div>
+        <div><strong>Barbeiro:</strong> ${escapeHTML(state.barbeiro.nome)}</div>
+        <div><strong>Serviço:</strong> ${escapeHTML(state.servico.nome)} — <span class="hl">${escapeHTML(state.servico.preco)}</span></div>
+        <div><strong>Data:</strong> ${escapeHTML(state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
+        <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação enviada para <span class="hl">${escapeHTML(tel)}</span></div>
+      `
+    }
     goToStep(4)
   }, 1000)
 }
@@ -610,10 +649,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderFiliais()
 
-  supabase.auth.onAuthStateChange(async (_event, session) => {
-    if (session) {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session && !isLoggedIn) {
       await applySession(session)
-    } else {
+    } else if (event === 'SIGNED_OUT') {
       isLoggedIn  = false
       currentUser = null
       updateNavLoginBtns()

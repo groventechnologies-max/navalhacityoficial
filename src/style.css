@@ -485,6 +485,8 @@ body {
 .photo-placeholder.has-photo::before,
 .photo-placeholder.has-photo::after { display: none; }
 .photo-placeholder img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -594,6 +596,8 @@ body {
   z-index: 1;
 }
 .barber-photo img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;

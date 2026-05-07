@@ -1,5 +1,15 @@
 import { DATA } from './data.js';
 
+// ─── UTILS ───────────────────────────────────────────────
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ─── STATE ───────────────────────────────────────────────
 let currentStep = 0;
 
@@ -43,7 +53,7 @@ function renderFiliais() {
         <div class="filial-content">
           <div class="filial-address">
             <h4>Endereço</h4>
-            <p>${f.endereco.replace('\n', '<br>')}</p>
+            <p>${f.endereco.replace(/\n/g, '<br>')}</p>
             <div class="filial-tags">
               ${f.tags.map(t => `<span class="tag">${t}</span>`).join('')}
             </div>
@@ -123,8 +133,8 @@ function renderPerfil() {
     </div>
 
     <footer class="step-footer">
-      <div class="logo-ft">Barber<span>King</span></div>
-      <div class="footer-sub">© 2025 BarberKing · Desenvolvido por Groven</div>
+      <div class="logo-ft">Navalha<span>City</span></div>
+      <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela Groven</div>
     </footer>
   `;
 }
@@ -189,8 +199,8 @@ function renderAgendamento() {
     </div>
 
     <footer class="step-footer">
-      <div class="logo-ft">Barber<span>King</span></div>
-      <div class="footer-sub">© 2025 BarberKing · Desenvolvido por Groven</div>
+      <div class="logo-ft">Navalha<span>City</span></div>
+      <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela Groven</div>
     </footer>
   `;
 
@@ -264,12 +274,12 @@ window.confirmarAgendamento = () => {
   }
 
   document.getElementById('confirmDetails').innerHTML = `
-    <div><strong>Cliente:</strong> ${nome}</div>
-    <div><strong>Unidade:</strong> ${state.filial.nome}</div>
-    <div><strong>Barbeiro:</strong> ${state.barbeiro.nome}</div>
-    <div><strong>Serviço:</strong> ${state.servico.nome} — <span class="hl">${state.servico.preco}</span></div>
-    <div><strong>Data:</strong> ${state.dia} às <span class="hl">${state.horario}</span></div>
-    <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação enviada para <span class="hl">${tel}</span></div>
+    <div><strong>Cliente:</strong> ${escapeHTML(nome)}</div>
+    <div><strong>Unidade:</strong> ${escapeHTML(state.filial.nome)}</div>
+    <div><strong>Barbeiro:</strong> ${escapeHTML(state.barbeiro.nome)}</div>
+    <div><strong>Serviço:</strong> ${escapeHTML(state.servico.nome)} — <span class="hl">${escapeHTML(state.servico.preco)}</span></div>
+    <div><strong>Data:</strong> ${escapeHTML(state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
+    <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação enviada para <span class="hl">${escapeHTML(tel)}</span></div>
   `;
 
   goToStep(4);

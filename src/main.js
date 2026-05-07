@@ -291,6 +291,67 @@ window.openProfileModal = () => {
   document.getElementById('profileSenhaConfirm').value = ''
   clearProfileMessage()
   modal.classList.add('open')
+  loadHistorico()
+}
+
+async function loadHistorico() {
+  const container = document.getElementById('profileHistorico')
+  if (!container) return
+  container.innerHTML = `<div style="color:var(--muted);font-size:12px;letter-spacing:1px;padding:8px 0">Carregando...</div>`
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('agendamentos')
+      .select('servico, barbeiro, horario, status, filial_id')
+      .eq('cliente_id', user.id)
+      .order('horario', { ascending: false })
+      .limit(10)
+
+    if (error) throw error
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `<div style="color:var(--muted);font-size:12px;letter-spacing:1px;padding:8px 0">Nenhum agendamento ainda.</div>`
+      return
+    }
+
+    const mesesPt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    const statusColor = { confirmado: '#2ecc71', pendente: '#f39c12', cancelado: '#e74c3c' }
+
+    container.innerHTML = data.map(ag => {
+      const d    = new Date(ag.horario)
+      const dia  = String(d.getDate()).padStart(2,'0')
+      const mes  = mesesPt[d.getMonth()]
+      const hora = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+      const cor  = statusColor[ag.status] || '#888'
+      const filialNome = DATA.filiais.find(f => f.id === ag.filial_id)?.nome || `Unidade ${ag.filial_id}`
+      return `
+        <div style="
+          padding: 12px 14px;
+          margin-bottom: 8px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          font-family: 'Barlow Condensed', sans-serif;
+          font-size: 13px;
+          letter-spacing: 0.5px;
+        ">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="color:var(--white);font-weight:600">${escapeHTML(ag.servico)}</span>
+            <span style="color:${cor};font-size:11px;letter-spacing:1px;text-transform:uppercase">${ag.status}</span>
+          </div>
+          <div style="color:var(--muted)">
+            ${escapeHTML(ag.barbeiro)} · ${escapeHTML(filialNome)}
+          </div>
+          <div style="color:var(--muted);font-size:11px;margin-top:3px">
+            ${dia}/${mes} às ${hora}
+          </div>
+        </div>
+      `
+    }).join('')
+  } catch (err) {
+    container.innerHTML = `<div style="color:#e74c3c;font-size:12px">Erro ao carregar histórico.</div>`
+  }
 }
 
 window.closeProfileModal = () => {
@@ -683,29 +744,86 @@ function renderDias() {
   document.getElementById('timesGrid').innerHTML = ''
 }
 
-window.selecionarDia = (i, label) => {
+const HORARIOS = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00']
+
+// Converte label "Seg 12/Mai" + horario "09:00" → ISO datetime string
+function labelParaISO(label, horario) {
+  const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
+  // label ex: "Seg 12/Mai"
+  const partes = label.split(' ')[1].split('/')
+  const dia    = parseInt(partes[0])
+  const mes    = meses[partes[1]]
+  const ano    = new Date().getFullYear()
+  const [h, m] = horario.split(':').map(Number)
+  const d = new Date(ano, mes, dia, h, m)
+  // Ajusta virada de ano: se data ficou no passado > 6 meses, é ano que vem
+  if (d < new Date() && (new Date() - d) > 180 * 864e5) d.setFullYear(ano + 1)
+  return d.toISOString()
+}
+
+window.selecionarDia = async (i, label) => {
   document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'))
   const dayBtn = document.getElementById(`day-${i}`)
   if (dayBtn) dayBtn.classList.add('selected')
-  state.dia = label
-  renderHorarios()
-  const bar  = document.getElementById('availBar')
-  const text = document.getElementById('availText')
-  if (bar)  bar.classList.add('active')
-  if (text) text.textContent = '15 horários disponíveis'
+  state.dia    = label
+  state.diaIdx = i
+  state.horario = null
+
+  // Mostra loading nos horários enquanto busca
+  const timesGrid = document.getElementById('timesGrid')
+  const availText = document.getElementById('availText')
+  const availBar  = document.getElementById('availBar')
+  if (timesGrid) timesGrid.innerHTML = `<div style="color:var(--muted);font-size:13px;letter-spacing:1px;padding:8px 0">Verificando disponibilidade...</div>`
+  if (availBar)  availBar.classList.add('active')
+  if (availText) availText.textContent = 'Carregando...'
+
+  await renderHorarios(label)
 }
 
-function renderHorarios() {
-  const horarios      = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00']
-  const indisponiveis = new Set([1, 4, 7, 12])
+async function renderHorarios(label) {
+  const timesGrid = document.getElementById('timesGrid')
+  const availText = document.getElementById('availText')
 
-  document.getElementById('timesGrid').innerHTML = horarios.map((h, i) => `
-    <div class="time-btn ${indisponiveis.has(i) ? 'unavailable' : ''}"
-         id="time-${i}"
-         onclick="selecionarHorario(${i}, '${h}')">
-      ${h}
-    </div>
-  `).join('')
+  // Busca horários já ocupados no banco para esse barbeiro+dia
+  let ocupados = new Set()
+  try {
+    const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
+    const partes = label.split(' ')[1].split('/')
+    const dia    = parseInt(partes[0])
+    const mes    = meses[partes[1]]
+    const ano    = new Date().getFullYear()
+    const dataInicio = new Date(ano, mes, dia, 0, 0, 0).toISOString()
+    const dataFim    = new Date(ano, mes, dia, 23, 59, 59).toISOString()
+
+    const { data } = await supabase
+      .from('agendamentos')
+      .select('horario')
+      .eq('filial_id',   state.filial.id)
+      .eq('barbeiro',    state.barbeiro.nome)
+      .gte('horario',    dataInicio)
+      .lte('horario',    dataFim)
+      .in('status',      ['confirmado', 'pendente'])
+
+    if (data) data.forEach(row => {
+      const h = new Date(row.horario)
+      ocupados.add(`${String(h.getHours()).padStart(2,'0')}:${String(h.getMinutes()).padStart(2,'0')}`)
+    })
+  } catch (_) { /* falha silenciosa — mostra tudo disponível */ }
+
+  const disponiveis = HORARIOS.filter(h => !ocupados.has(h)).length
+  if (availText) availText.textContent = `${disponiveis} horário${disponiveis !== 1 ? 's' : ''} disponível${disponiveis !== 1 ? 'is' : ''}`
+
+  if (!timesGrid) return
+  timesGrid.innerHTML = HORARIOS.map((h, i) => {
+    const indisponivel = ocupados.has(h)
+    return `
+      <div class="time-btn ${indisponivel ? 'unavailable' : ''}"
+           id="time-${i}"
+           onclick="selecionarHorario(${i}, '${h}')">
+        ${h}
+      </div>
+    `
+  }).join('')
 }
 
 window.selecionarHorario = (i, h) => {
@@ -716,8 +834,7 @@ window.selecionarHorario = (i, h) => {
   state.horario = h
 }
 
-// ─── CONFIRMAÇÃO ─────────────────────────────────────────
-window.confirmarAgendamento = () => {
+window.confirmarAgendamento = async () => {
   const nome = document.getElementById('clientName')?.value.trim()
   const tel  = document.getElementById('clientPhone')?.value.trim()
 
@@ -732,7 +849,22 @@ window.confirmarAgendamento = () => {
   btn.textContent = 'Reservando...'
   btn.disabled    = true
 
-  setTimeout(() => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    const { error } = await supabase.from('agendamentos').insert({
+      cliente_id:  user.id,
+      filial_id:   state.filial.id,
+      barbeiro:    state.barbeiro.nome,
+      servico:     state.servico.nome,
+      preco:       state.servico.preco,
+      horario:     labelParaISO(state.dia, state.horario),
+      observacoes: document.getElementById('clientObs')?.value.trim() || null,
+      status:      'confirmado',
+    })
+
+    if (error) throw new Error(error.message)
+
     const details = document.getElementById('confirmDetails')
     if (details) {
       details.innerHTML = `
@@ -741,11 +873,15 @@ window.confirmarAgendamento = () => {
         <div><strong>Barbeiro:</strong> ${escapeHTML(state.barbeiro.nome)}</div>
         <div><strong>Serviço:</strong> ${escapeHTML(state.servico.nome)} — <span class="hl">${escapeHTML(state.servico.preco)}</span></div>
         <div><strong>Data:</strong> ${escapeHTML(state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
-        <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação enviada para <span class="hl">${escapeHTML(tel)}</span></div>
+        <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação para <span class="hl">${escapeHTML(tel)}</span></div>
       `
     }
     goToStep(4)
-  }, 1000)
+  } catch (err) {
+    alert('Erro ao confirmar: ' + (err.message || 'Tente novamente.'))
+    btn.textContent = 'Confirmar Agendamento'
+    btn.disabled    = false
+  }
 }
 
 // ─── RESET ───────────────────────────────────────────────

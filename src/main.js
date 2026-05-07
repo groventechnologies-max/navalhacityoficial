@@ -12,14 +12,13 @@ function escapeHTML(str) {
 }
 
 function isPhone(str) {
-  // Se não tem @, trata como telefone
   return !/\S+@\S+\.\S+/.test(str)
 }
 
 // ─── STATE ───────────────────────────────────────────────
 let currentStep = 0
 let isLoggedIn  = false
-let currentUser = null  // { nome, telefone, role, filial_id }
+let currentUser = null
 
 const state = {
   filial:   null,
@@ -78,10 +77,9 @@ async function handleRegister(nome, email, telefone, senha) {
 
   if (error) throw new Error(error.message)
 
-  // O trigger no banco cria o profile automaticamente.
-  // Setamos o currentUser localmente enquanto a sessão não dispara o listener.
-  currentUser = { nome, telefone, role: 'cliente', filial_id: null }
-  isLoggedIn  = true
+  // Não loga automaticamente — usuário precisa confirmar o email primeiro
+  // Retorna flag pra mostrar mensagem adequada
+  return { needsConfirmation: true }
 }
 
 // ─── AUTH: login ─────────────────────────────────────────
@@ -89,7 +87,6 @@ async function handleLogin(identifier, senha) {
   let email = identifier
 
   if (isPhone(identifier)) {
-    // Busca o email pelo telefone via função SQL
     const { data, error } = await supabase.rpc('get_email_by_phone', {
       p_telefone: identifier,
     })
@@ -98,7 +95,14 @@ async function handleLogin(identifier, senha) {
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error('Email/telefone ou senha incorretos.')
+
+  if (error) {
+    // Supabase retorna "Email not confirmed" quando o email ainda não foi confirmado
+    if (error.message === 'Email not confirmed') {
+      throw new Error('EMAIL_NOT_CONFIRMED')
+    }
+    throw new Error('Email/telefone ou senha incorretos.')
+  }
 
   await applySession(data.session)
 }
@@ -157,12 +161,42 @@ window.closeLoginModal = () => {
   if (modal) modal.classList.remove('open')
 }
 
+// ─── MOSTRAR MENSAGEM NO MODAL ───────────────────────────
+function showModalMessage(text, type = 'error') {
+  let el = document.getElementById('loginModalMsg')
+  if (!el) {
+    el = document.createElement('div')
+    el.id = 'loginModalMsg'
+    const btn = document.getElementById('loginModalBtn')
+    btn.parentNode.insertBefore(el, btn)
+  }
+  el.textContent = text
+  el.style.cssText = `
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    line-height: 1.5;
+    border: 1px solid ${type === 'error' ? '#c0392b' : '#27ae60'};
+    color: ${type === 'error' ? '#e74c3c' : '#2ecc71'};
+    background: ${type === 'error' ? 'rgba(192,57,43,0.08)' : 'rgba(39,174,96,0.08)'};
+  `
+}
+
+function clearModalMessage() {
+  const el = document.getElementById('loginModalMsg')
+  if (el) el.remove()
+}
+
 window.submitLogin = async () => {
   const mode  = document.getElementById('loginModalMode').value
   const senha = document.getElementById('loginSenha').value.trim()
   const btn   = document.getElementById('loginModalBtn')
 
-  if (!senha) { alert('Informe sua senha.'); return }
+  clearModalMessage()
+
+  if (!senha) { showModalMessage('Informe sua senha.'); return }
 
   btn.textContent = 'Aguarde...'
   btn.disabled    = true
@@ -174,28 +208,44 @@ window.submitLogin = async () => {
       const telefone = document.getElementById('loginTel').value.trim()
 
       if (!nome || !email || !telefone) {
-        alert('Preencha todos os campos.')
+        showModalMessage('Preencha todos os campos.')
         return
       }
 
       await handleRegister(nome, email, telefone, senha)
 
+      // Não fecha o modal — mostra instrução de confirmar email
+      showModalMessage(
+        '✅ Cadastro realizado! Verifique seu e-mail e clique no link de confirmação para ativar sua conta.',
+        'success'
+      )
+      btn.textContent = 'Criar conta'
+      btn.disabled    = false
+      return
+
     } else {
       const identifier = document.getElementById('loginIdentifier').value.trim()
-      if (!identifier) { alert('Informe seu WhatsApp ou e-mail.'); return }
+      if (!identifier) { showModalMessage('Informe seu WhatsApp ou e-mail.'); return }
+
       await handleLogin(identifier, senha)
+
+      closeLoginModal()
+      updateNavLoginBtns()
+      const confirmSection = document.getElementById('confirmSection')
+      if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
     }
 
-    closeLoginModal()
-    updateNavLoginBtns()
-    const confirmSection = document.getElementById('confirmSection')
-    if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
-
   } catch (err) {
-    alert(err.message || 'Erro inesperado. Tente novamente.')
+    if (err.message === 'EMAIL_NOT_CONFIRMED') {
+      showModalMessage('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada (e o spam).')
+    } else {
+      showModalMessage(err.message || 'Erro inesperado. Tente novamente.')
+    }
   } finally {
-    btn.textContent = mode === 'register' ? 'Criar conta' : 'Entrar'
-    btn.disabled    = false
+    if (btn.disabled) {
+      btn.textContent = mode === 'register' ? 'Criar conta' : 'Entrar'
+      btn.disabled    = false
+    }
   }
 }
 
@@ -568,12 +618,10 @@ function resetFlow() {
 
 // ─── INIT ────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // Carrega sessão do Supabase (persiste entre reloads)
   await loadSession()
 
   renderFiliais()
 
-  // Listener de mudança de auth (login/logout em outra aba, etc.)
   supabase.auth.onAuthStateChange(async (_event, session) => {
     if (session) {
       await applySession(session)
@@ -584,12 +632,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   })
 
-  // Login modal overlay click
   document.getElementById('loginModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeLoginModal()
   })
 
-  // Nav login buttons
   document.querySelectorAll('.nav-login-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (isLoggedIn) logoutUser()

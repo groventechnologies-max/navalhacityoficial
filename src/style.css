@@ -114,6 +114,31 @@ body {
 }
 .nav-brand span { color: var(--orange); }
 
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 90px;
+  justify-content: flex-end;
+}
+
+.nav-instagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+.nav-instagram svg {
+  width: 20px;
+  height: 20px;
+}
+.nav-instagram:hover {
+  color: var(--orange);
+  transform: scale(1.15);
+}
+
 /* ─── STEP CONTENT ─── */
 .step-content {
   max-width: 1100px;

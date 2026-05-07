@@ -1470,3 +1470,21 @@ body {
   cursor: not-allowed;
   letter-spacing: 2px;
 }
+
+/* ─── LINK DASHBOARD NA NAV ─── */
+.nav-dash-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--orange);
+  text-decoration: none;
+  border: 1px solid var(--orange);
+  padding: 5px 12px;
+  border-radius: 2px;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-dash-btn:hover {
+  background: var(--orange);
+  color: var(--black);
+}

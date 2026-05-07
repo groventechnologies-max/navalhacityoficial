@@ -64,6 +64,7 @@ async function applySession(session) {
 }
 
 function updateNavLoginBtns() {
+  const dashRoles = ['admin', 'gerente', 'barbeiro']
   document.querySelectorAll('.nav-login-btn').forEach(btn => {
     if (isLoggedIn && currentUser) {
       btn.textContent = currentUser.nome.split(' ')[0]
@@ -72,6 +73,9 @@ function updateNavLoginBtns() {
       btn.textContent = 'Login'
       btn.classList.remove('logged')
     }
+  })
+  document.querySelectorAll('.nav-dash-btn').forEach(link => {
+    link.style.display = (isLoggedIn && dashRoles.includes(currentUser?.role)) ? 'inline-block' : 'none'
   })
 }
 

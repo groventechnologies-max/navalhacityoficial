@@ -214,6 +214,19 @@ function renderAgendamento() {
       </div>
     </div>
 
+    ${state.barbeiro.portfolio && state.barbeiro.portfolio.length ? `
+    <div class="sched-block">
+      <div class="sched-label">Trabalhos de ${state.barbeiro.nome}</div>
+      <div class="portfolio-strip">
+        ${state.barbeiro.portfolio.map(src => `
+          <div class="portfolio-item">
+            <img src="${src}" alt="Corte">
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+
     <div class="sched-block">
       <div class="sched-label">Serviço desejado</div>
       <div class="services-grid">

@@ -71,6 +71,16 @@
     }
     .btn-logout:hover { color: var(--red); border-color: var(--red); }
 
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted); text-decoration: none;
+      padding: 6px 14px; border-radius: 2px; border: 1px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    .nav-link:hover { color: var(--white); }
+    .nav-link.active { color: var(--white); border-color: var(--border); }
+
     .btn-back-home {
       font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
       text-transform: uppercase; background: none; border: none;
@@ -78,19 +88,12 @@
       transition: color .2s; white-space: nowrap; flex-shrink: 0;
     }
     .btn-back-home:hover { color: var(--white); }
-    .btn-equipe {
-      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
-      text-transform: uppercase; background: none; border: 1px solid var(--border);
-      color: var(--muted); padding: 6px 14px; border-radius: 2px; cursor: pointer;
-      text-decoration: none; transition: color .2s, border-color .2s; white-space: nowrap; flex-shrink: 0;
-    }
-    .btn-equipe:hover { color: var(--white); border-color: var(--white); }
 
     /* ── MOBILE NAV: esconde elementos redundantes ── */
     @media (max-width: 600px) {
       .dash-nav { padding: 12px 16px; }
-      .dash-user-name { display: none; } /* nome aparece no header do conteúdo */
-      .btn-back-home { font-size: 11px; letter-spacing: 1px; }
+      .nav-links { display: none; }
+      .dash-user-name { display: none; }
       .btn-logout { font-size: 11px; padding: 5px 10px; letter-spacing: 1px; }
       .dash-role-badge { font-size: 10px; padding: 3px 8px; letter-spacing: 1px; }
     }
@@ -309,9 +312,11 @@
 
   <nav class="dash-nav">
     <a href="/" class="dash-logo">Navalha<span>City</span></a>
+    <div class="nav-links">
+      <a href="/dashboard" class="nav-link active">Dashboard</a>
+      <a href="/equipe" class="nav-link" id="btnEquipe" style="display:none">Equipe</a>
+    </div>
     <div class="dash-nav-right">
-      <a href="/" class="btn-back-home">← Site</a>
-      <a href="/equipe" class="btn-equipe" id="btnEquipe" style="display:none">👥 Equipe</a>
       <span class="dash-user-name" id="navUserName"></span>
       <span class="dash-role-badge" id="navRoleBadge"></span>
       <button class="btn-logout" onclick="dashLogout()">Sair</button>

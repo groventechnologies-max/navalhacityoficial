@@ -543,11 +543,38 @@ window.toggleFilial = (id) => {
   if (!isOpen) el.classList.add('open')
 }
 
-window.selecionarFilial = (id) => {
+window.selecionarFilial = async (id) => {
   state.filial   = DATA.filiais.find(f => f.id === id)
   state.barbeiro = null
-  renderPerfil()
   goToStep(2)
+
+  document.getElementById('profileContent').innerHTML = `
+    <div style="padding:48px 0;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;color:#888">
+      Carregando...
+    </div>
+  `
+
+  const { data } = await supabase
+    .from('equipe')
+    .select('nome, especialidade, nota, foto_url')
+    .eq('filial_id', id)
+    .eq('status', 'ativo')
+    .order('nome', { ascending: true })
+
+  if (data && data.length > 0) {
+    state.filial = {
+      ...state.filial,
+      barbeiros: data.map(m => ({
+        nome:         m.nome,
+        especialidade: m.especialidade || '—',
+        nota:         m.nota ? `${m.nota} ★` : '',
+        foto:         m.foto_url || null,
+        emoji:        '✂️',
+      })),
+    }
+  }
+
+  renderPerfil()
 }
 
 // ─── STEP 2: PERFIL + BARBEIROS ──────────────────────────

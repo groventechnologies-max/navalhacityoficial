@@ -78,6 +78,13 @@
       transition: color .2s; white-space: nowrap; flex-shrink: 0;
     }
     .btn-back-home:hover { color: var(--white); }
+    .btn-equipe {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
+      text-transform: uppercase; background: none; border: 1px solid var(--border);
+      color: var(--muted); padding: 6px 14px; border-radius: 2px; cursor: pointer;
+      text-decoration: none; transition: color .2s, border-color .2s; white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-equipe:hover { color: var(--white); border-color: var(--white); }
 
     /* ── MOBILE NAV: esconde elementos redundantes ── */
     @media (max-width: 600px) {
@@ -304,6 +311,7 @@
     <a href="/" class="dash-logo">Navalha<span>City</span></a>
     <div class="dash-nav-right">
       <a href="/" class="btn-back-home">← Site</a>
+      <a href="/equipe" class="btn-equipe" id="btnEquipe" style="display:none">👥 Equipe</a>
       <span class="dash-user-name" id="navUserName"></span>
       <span class="dash-role-badge" id="navRoleBadge"></span>
       <button class="btn-logout" onclick="dashLogout()">Sair</button>
@@ -414,6 +422,11 @@
       currentProfile = profile
 
       // Nav desktop
+      // Botão Equipe — só admin
+      if (profile.role === 'admin') {
+        document.getElementById('btnEquipe').style.display = ''
+      }
+
       document.getElementById('navUserName').textContent = profile.nome.split(' ')[0]
       const badge = document.getElementById('navRoleBadge')
       badge.textContent = profile.role

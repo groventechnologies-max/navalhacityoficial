@@ -1667,4 +1667,57 @@ body {
   flex-shrink: 0;
 }
 
-/* hamburguer — já tratado no breakpoint 760px acima */
+/* ═══════════════════════════════════════════════
+   RESPONSIVE POR ALTURA (max-height)
+   Notebooks / monitores baixos — independente da largura
+═══════════════════════════════════════════════ */
+
+/* Notebook padrão: 1366×768, 1280×800, janela não maximizada */
+@media (max-height: 780px) {
+  .hero {
+    padding-bottom: 90px; /* reserva espaço para scroll-hint */
+  }
+  .hero-logo { width: 110px; height: 110px; }
+  .hero-logo-wrap { margin-bottom: 14px; }
+  .hero-badge { margin-bottom: 12px; }
+  .hero-title { font-size: clamp(64px, 10vw, 130px); }
+  .hero-sub { margin-top: 16px; }
+  .hero-cta { margin-top: 28px; }
+  .scroll-hint { bottom: 20px; }
+  .scroll-hint::after { height: 28px; }
+}
+
+/* Tela bem curta: alguns notebooks velhos, janela pequena, zoom alto */
+@media (max-height: 650px) {
+  .hero {
+    padding-top: 16px;
+    padding-bottom: 80px;
+    justify-content: flex-start; /* empurra conteúdo para o topo — evita sobreposicão */
+    padding-top: 40px;
+  }
+  .hero-logo { width: 80px; height: 80px; }
+  .hero-logo-wrap { margin-bottom: 10px; }
+  .hero-badge { font-size: 10px; margin-bottom: 8px; }
+  .hero-title { font-size: clamp(56px, 9vw, 110px); line-height: 0.88; }
+  .hero-sub { font-size: 13px; margin-top: 12px; }
+  .hero-cta { margin-top: 18px; }
+  .btn-primary { padding: 12px 28px; font-size: 13px; }
+  .scroll-hint { bottom: 14px; font-size: 9px; }
+  .scroll-hint::after { height: 20px; }
+}
+
+/* Muito curta: zoom elevado, janela minimalista */
+@media (max-height: 520px) {
+  .scroll-hint { display: none; } /* esconde totalmente para não sobrepor */
+  .hero {
+    padding-top: 32px;
+    padding-bottom: 32px;
+    justify-content: flex-start;
+  }
+  .hero-logo { width: 60px; height: 60px; }
+  .hero-logo-wrap { margin-bottom: 8px; }
+  .hero-badge { display: none; } /* simplifica o hero em telas muito curtas */
+  .hero-title { font-size: clamp(48px, 8vw, 90px); }
+  .hero-sub { margin-top: 8px; font-size: 13px; }
+  .hero-cta { margin-top: 14px; }
+}

@@ -934,20 +934,90 @@ body {
   50%       { opacity: 1;   transform: scaleY(1.2); }
 }
 
-/* ─── RESPONSIVE ─── */
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — ordem: do maior para o menor
+   1100 → 900 → 760 → 600 → 390
+═══════════════════════════════════════════════ */
 
-/* Tablet */
+/* ── Laptops pequenos / janelas estreitas (< 1100px) ── */
+@media (max-width: 1100px) {
+  .step-content { padding-left: 32px; padding-right: 32px; }
+}
+
+/* ── Tablet landscape / laptop < 900px ── */
 @media (max-width: 900px) {
+
+  /* NAV: compacta itens antes de colapsar */
+  .step-nav { padding: 14px 24px; }
+  .nav-brand { font-size: 17px; letter-spacing: 2px; }
+  .nav-right { gap: 10px; }
+  .nav-login-btn { font-size: 11px; padding: 5px 10px; }
+  .nav-dash-btn { font-size: 10px; padding: 4px 10px; }
+
+  /* HERO: padding-bottom garante que scroll-hint não sobrepõe o botão */
+  .hero { padding-bottom: 100px; }
+  .hero-logo { width: 130px; height: 130px; }
+  .hero-logo-wrap { margin-bottom: 18px; }
+  .hero-title { font-size: clamp(72px, 12vw, 140px); }
+  .hero-sub { margin-top: 18px; }
+  .hero-cta { margin-top: 36px; }
+
+  /* STEP CONTENT */
+  .step-content { padding-left: 24px; padding-right: 24px; }
+
+  /* FOTOS PERFIL */
   .profile-photos {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 160px 160px 160px;
   }
   .profile-photos .photo-placeholder:first-child { grid-row: span 1; grid-column: span 2; }
+
+  /* PERFIL DESC */
   .profile-desc { grid-template-columns: 1fr; gap: 32px; }
+
+  /* BARBEIROS */
   .barbers-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 }
 
-/* Mobile */
+/* ── Tablet portrait / janela estreita (< 760px) ── */
+@media (max-width: 760px) {
+
+  /* NAV: esconde itens secundários, mostra hamburguer */
+  .nav-right .nav-brand-group,
+  .nav-right .nav-login-btn,
+  .nav-right .nav-dash-btn,
+  .nav-right .nav-instagram { display: none !important; }
+  .nav-hamburger { display: flex; }
+  .step-nav { position: sticky; }
+  .nav-mobile-menu { display: flex; }
+
+  /* HERO */
+  .hero { padding-top: 20px; padding-bottom: 110px; }
+  .hero-logo { width: 110px; height: 110px; }
+  .hero-logo-wrap { margin-bottom: 14px; }
+  .hero-badge { font-size: 10px; letter-spacing: 3px; margin-bottom: 14px; }
+  .hero-title { font-size: clamp(60px, 13vw, 110px); }
+  .hero-sub { font-size: 14px; margin-top: 16px; }
+  .hero-cta { margin-top: 28px; }
+  .scroll-hint { font-size: 10px; bottom: 22px; }
+
+  /* STEP CONTENT */
+  .step-content { padding: 40px 20px 80px; }
+  .section-title { font-size: clamp(38px, 8vw, 60px); margin-bottom: 40px; }
+
+  /* UNIDADES: expande max-height para incluir mapa */
+  .filial-item.open .filial-body { max-height: 700px; }
+  .filial-content { grid-template-columns: 1fr; }
+  .filial-address { border-right: none; border-bottom: 1px solid var(--border); }
+  .filial-map { min-height: 200px; }
+  .filial-map iframe { min-height: 200px; }
+
+  /* AGENDAMENTO */
+  .form-row { grid-template-columns: 1fr; }
+  .context-chip { width: 100%; }
+}
+
+/* ── Mobile (< 600px) ── */
 @media (max-width: 600px) {
 
   .hero-scissors { font-size: 220px; }
@@ -959,14 +1029,15 @@ body {
   .nav-logo { width: 26px; height: 26px; }
 
   /* HERO */
-  .hero-logo { width: 110px; height: 110px; }
-  .hero-logo-wrap { margin-bottom: 16px; }
-  .hero-badge { font-size: 9px; letter-spacing: 3px; margin-bottom: 12px; }
-  .hero-title { font-size: clamp(56px, 18vw, 90px); }
-  .hero-sub { font-size: 13px; margin-top: 16px; }
-  .hero-cta { margin-top: 32px; }
+  .hero { padding-top: 24px; padding-bottom: 100px; }
+  .hero-logo { width: 90px; height: 90px; }
+  .hero-logo-wrap { margin-bottom: 12px; }
+  .hero-badge { font-size: 9px; letter-spacing: 3px; margin-bottom: 10px; }
+  .hero-title { font-size: clamp(52px, 16vw, 86px); }
+  .hero-sub { font-size: 13px; margin-top: 14px; }
+  .hero-cta { margin-top: 24px; }
   .btn-primary { padding: 14px 28px; font-size: 13px; }
-  .scroll-hint { font-size: 9px; letter-spacing: 2px; bottom: 24px; }
+  .scroll-hint { font-size: 9px; letter-spacing: 2px; bottom: 20px; }
 
   /* STEP CONTENT */
   .step-content { padding: 32px 16px 80px; }
@@ -979,12 +1050,8 @@ body {
   .filial-info h3 { font-size: 17px; }
   .filial-info p { font-size: 12px; }
   .filial-arrow { font-size: 14px; }
-  .filial-content { grid-template-columns: 1fr; }
-  .filial-address { padding: 20px 16px; border-right: none; border-bottom: 1px solid var(--border); }
+  .filial-address { padding: 20px 16px; }
   .filial-address p { font-size: 14px; }
-  .filial-map { min-height: 200px; }
-  .filial-map iframe { min-height: 200px; }
-  .filial-item.open .filial-body { max-height: 700px; }
   .btn-select { width: 100%; justify-content: center; margin-top: 20px; padding: 14px; }
   .tag { font-size: 10px; padding: 3px 8px; }
 
@@ -1063,7 +1130,6 @@ body {
 
   /* AGENDAMENTO */
   .schedule-context { gap: 8px; margin-bottom: 28px; }
-  .context-chip { padding: 10px 14px; width: 100%; }
   .sched-block { margin-bottom: 28px; }
   .services-grid { grid-template-columns: 1fr; gap: 6px; }
   .service-item { padding: 14px 16px; }
@@ -1073,7 +1139,6 @@ body {
   .times-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .time-btn { padding: 12px 8px; font-size: 14px; }
   .confirm-form { padding: 20px 16px; }
-  .form-row { grid-template-columns: 1fr; }
   .form-input { padding: 14px 12px; font-size: 16px; }
   .btn-confirm { padding: 16px; font-size: 14px; letter-spacing: 2px; }
 
@@ -1085,6 +1150,18 @@ body {
 
   /* FOOTER */
   .step-footer { padding: 24px 0; margin-top: 40px; }
+}
+
+/* ── Telas muito pequenas — iPhone SE / Galaxy A (< 390px) ── */
+@media (max-width: 390px) {
+  .hero { padding-bottom: 90px; }
+  .hero-logo { width: 72px; height: 72px; }
+  .hero-logo-wrap { margin-bottom: 8px; }
+  .hero-badge { font-size: 8px; letter-spacing: 2px; margin-bottom: 8px; }
+  .hero-title { font-size: clamp(44px, 15vw, 72px); }
+  .hero-sub { font-size: 12px; margin-top: 10px; }
+  .hero-cta { margin-top: 18px; }
+  .btn-primary { padding: 12px 22px; font-size: 12px; letter-spacing: 2px; }
 }
 
 /* ─── BADGES ─── */
@@ -1457,10 +1534,30 @@ body {
 }
 .login-show-pass:hover { color: var(--white); }
 
+@media (max-width: 760px) {
+  .login-modal { padding: 36px 24px; max-width: calc(100% - 32px); }
+  .login-wall { padding: 36px 24px; }
+  .login-wall-title { font-size: 28px; }
+}
+
 @media (max-width: 600px) {
-  .login-modal { padding: 36px 20px; max-width: calc(100% - 32px); }
+  .login-modal { padding: 36px 20px; }
   .login-wall { padding: 36px 20px; }
   .login-wall-title { font-size: 26px; }
+}
+
+/* Telas muito pequenas (iPhone SE, Galaxy A, < 390px) */
+@media (max-width: 390px) {
+  .hero {
+    padding-bottom: 90px;
+  }
+  .hero-logo { width: 72px; height: 72px; }
+  .hero-logo-wrap { margin-bottom: 8px; }
+  .hero-badge { font-size: 8px; letter-spacing: 2px; margin-bottom: 8px; }
+  .hero-title { font-size: clamp(44px, 15vw, 72px); }
+  .hero-sub { font-size: 12px; margin-top: 10px; }
+  .hero-cta { margin-top: 18px; }
+  .btn-primary { padding: 12px 22px; font-size: 12px; letter-spacing: 2px; }
 }
 
 /* ─── BOTÃO CARREGANDO ─── */
@@ -1570,19 +1667,4 @@ body {
   flex-shrink: 0;
 }
 
-@media (max-width: 600px) {
-  /* esconde itens do nav-right no mobile */
-  .nav-right .nav-brand-group,
-  .nav-right .nav-login-btn,
-  .nav-right .nav-dash-btn,
-  .nav-right .nav-instagram { display: none !important; }
-
-  /* mostra o hamburguer */
-  .nav-hamburger { display: flex; }
-
-  /* o step-nav precisa de position para o dropdown funcionar */
-  .step-nav { position: sticky; }
-
-  /* dropdown aparece */
-  .nav-mobile-menu { display: flex; }
-}
+/* hamburguer — já tratado no breakpoint 760px acima */

@@ -25,7 +25,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { min-height: 100%; background: var(--black); color: var(--text); font-family: 'Barlow', sans-serif; }
 
-    /* NAV */
+    /* ── NAV ── */
     .dash-nav {
       position: sticky; top: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
@@ -33,39 +33,65 @@
       background: rgba(10,10,10,0.92);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
+      gap: 12px;
     }
-    .dash-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--white); letter-spacing: 3px; text-decoration: none; }
+    .dash-logo {
+      font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+      color: var(--white); letter-spacing: 3px; text-decoration: none;
+      flex-shrink: 0;
+    }
     .dash-logo span { color: var(--orange); }
-    .dash-nav-right { display: flex; align-items: center; gap: 16px; }
+
+    .dash-nav-right {
+      display: flex; align-items: center; gap: 12px;
+      overflow: hidden;
+    }
     .dash-role-badge {
       font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
       letter-spacing: 2px; text-transform: uppercase;
       padding: 4px 10px; border-radius: 2px;
       border: 1px solid var(--border); color: var(--muted);
+      flex-shrink: 0;
     }
-    .dash-role-badge.admin { border-color: var(--orange); color: var(--orange); }
+    .dash-role-badge.admin   { border-color: var(--orange); color: var(--orange); }
     .dash-role-badge.gerente { border-color: var(--yellow); color: var(--yellow); }
-    .dash-role-badge.barbeiro { border-color: #aaa; color: #aaa; }
-    .dash-user-name { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1px; color: var(--white); }
+    .dash-role-badge.barbeiro{ border-color: #aaa; color: #aaa; }
+
+    .dash-user-name {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 14px;
+      letter-spacing: 1px; color: var(--white);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
     .btn-logout {
       font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
       text-transform: uppercase; background: none; border: 1px solid var(--border);
       color: var(--muted); padding: 6px 14px; border-radius: 2px; cursor: pointer;
-      transition: color .2s, border-color .2s;
+      transition: color .2s, border-color .2s; white-space: nowrap; flex-shrink: 0;
     }
     .btn-logout:hover { color: var(--red); border-color: var(--red); }
+
     .btn-back-home {
       font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
       text-transform: uppercase; background: none; border: none;
       color: var(--muted); cursor: pointer; text-decoration: none;
-      transition: color .2s;
+      transition: color .2s; white-space: nowrap; flex-shrink: 0;
     }
     .btn-back-home:hover { color: var(--white); }
 
-    /* BLOQUEIO */
+    /* ── MOBILE NAV: esconde elementos redundantes ── */
+    @media (max-width: 600px) {
+      .dash-nav { padding: 12px 16px; }
+      .dash-user-name { display: none; } /* nome aparece no header do conteúdo */
+      .btn-back-home { font-size: 11px; letter-spacing: 1px; }
+      .btn-logout { font-size: 11px; padding: 5px 10px; letter-spacing: 1px; }
+      .dash-role-badge { font-size: 10px; padding: 3px 8px; letter-spacing: 1px; }
+    }
+
+    /* ── BLOQUEIO ── */
     #accessDenied {
       display: none; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 80vh; text-align: center; gap: 16px;
+      min-height: 80vh; text-align: center; gap: 16px; padding: 24px;
     }
     #accessDenied .icon { font-size: 48px; }
     #accessDenied h2 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--white); letter-spacing: 3px; }
@@ -75,18 +101,32 @@
       font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--muted);
     }
 
-    /* CONTEÚDO */
+    /* ── CONTEÚDO ── */
     #dashContent { display: none; padding: 32px; max-width: 1100px; margin: 0 auto; }
 
-    .dash-header { margin-bottom: 28px; }
+    .dash-header { margin-bottom: 24px; }
     .dash-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; color: var(--white); letter-spacing: 4px; line-height: 1; }
     .dash-subtitle { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--muted); margin-top: 6px; }
 
-    /* FILTROS */
+    /* badge de boas vindas no mobile (substitui o nome da nav) */
+    .dash-welcome-mobile {
+      display: none;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; letter-spacing: 1px; color: var(--muted);
+      margin-top: 4px;
+    }
+    @media (max-width: 600px) {
+      .dash-welcome-mobile { display: block; }
+    }
+
+    /* ── FILTROS ── */
     .dash-filters {
       display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: center;
     }
-    .filter-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+    .filter-label {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
+      letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
+    }
     .filter-select {
       background: var(--card); border: 1px solid var(--border); color: var(--text);
       font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 1px;
@@ -94,8 +134,12 @@
     }
     .filter-select:focus { border-color: var(--orange-dim); }
 
-    /* STATS */
-    .dash-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 28px; }
+    /* ── STATS ── */
+    .dash-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px; margin-bottom: 28px;
+    }
     .stat-card {
       background: var(--card); border: 1px solid var(--border); border-radius: 4px;
       padding: 18px 20px;
@@ -105,7 +149,7 @@
     .stat-card.green .stat-n { color: var(--green); }
     .stat-card.yellow .stat-n { color: var(--yellow); }
 
-    /* TABELA */
+    /* ── TABELA ── */
     .dash-table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
     .dash-table-header {
       padding: 14px 20px; border-bottom: 1px solid var(--border);
@@ -136,10 +180,9 @@
     .badge-confirmado { background: rgba(46,204,113,.12); color: var(--green); border: 1px solid rgba(46,204,113,.3); }
     .badge-pendente   { background: rgba(243,156,18,.12);  color: var(--yellow); border: 1px solid rgba(243,156,18,.3); }
     .badge-cancelado  { background: rgba(231,76,60,.12);   color: var(--red);    border: 1px solid rgba(231,76,60,.3); }
-
     .empty-row td { text-align: center; color: var(--muted); padding: 32px; }
 
-    /* MÊS NAV */
+    /* ── MÊS NAV ── */
     .month-nav { display: flex; align-items: center; gap: 12px; }
     .month-btn {
       background: none; border: 1px solid var(--border); color: var(--muted);
@@ -149,14 +192,63 @@
     .month-btn:hover { color: var(--white); border-color: var(--orange-dim); }
     .month-label { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--white); letter-spacing: 2px; min-width: 160px; text-align: center; }
 
-    @media (max-width: 700px) {
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .dash-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
       #dashContent { padding: 16px; }
-      .dash-nav { padding: 12px 16px; }
+
+      /* Header */
+      .dash-title { font-size: 32px; letter-spacing: 2px; }
+
+      /* Filtros: empilha verticalmente */
+      .dash-filters { gap: 8px; }
+      .filter-select { width: 100%; font-size: 14px; padding: 10px 12px; }
+      .month-label { font-size: 17px; min-width: 130px; }
+
+      /* Stats: 2x2 */
+      .dash-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .stat-card { padding: 14px 16px; }
+      .stat-card .stat-n { font-size: 30px; }
+      .stat-card .stat-l { font-size: 10px; }
+
+      /* Tabela: vira cards */
       thead { display: none; }
-      tbody tr { display: block; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-      tbody td { display: block; padding: 2px 0; border: none; }
-      tbody td::before { content: attr(data-label) ': '; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+      tbody tr {
+        display: block;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+      }
+      tbody td {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        padding: 3px 0;
+        border: none;
+        font-size: 13px;
+      }
+      tbody td::before {
+        content: attr(data-label);
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        min-width: 68px;
+        flex-shrink: 0;
+      }
+      .td-name { font-size: 15px; margin-bottom: 4px; }
       .td-name::before { display: none; }
+
+      /* status badge no canto superior direito no card */
+      td[data-label="Status"] {
+        position: absolute;
+        top: 14px; right: 14px;
+        padding: 0;
+      }
+      td[data-label="Status"]::before { display: none; }
     }
   </style>
 </head>
@@ -185,6 +277,7 @@
     <div class="dash-header">
       <div class="dash-title" id="dashTitle">Dashboard</div>
       <div class="dash-subtitle" id="dashSubtitle"></div>
+      <div class="dash-welcome-mobile" id="dashWelcomeMobile"></div>
     </div>
 
     <div class="dash-filters">
@@ -240,19 +333,14 @@
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
     const FILIAIS = { 1:'Unidade 1', 2:'Unidade 2', 3:'Unidade 3', 4:'Unidade 4', 5:'Unidade 5' }
 
-    let currentUser = null
+    let currentUser    = null
     let currentProfile = null
     let viewMonth = new Date().getMonth()
     let viewYear  = new Date().getFullYear()
 
-    // ── INIT ──────────────────────────────────────────────
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
-
-      if (!session) {
-        showDenied()
-        return
-      }
+      if (!session) { showDenied(); return }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -260,30 +348,30 @@
         .eq('id', session.user.id)
         .single()
 
-      if (!profile || !ROLES_PERMITIDOS.includes(profile.role)) {
-        showDenied()
-        return
-      }
+      if (!profile || !ROLES_PERMITIDOS.includes(profile.role)) { showDenied(); return }
 
       currentUser    = session.user
       currentProfile = profile
 
-      // Nav
+      // Nav desktop
       document.getElementById('navUserName').textContent = profile.nome.split(' ')[0]
       const badge = document.getElementById('navRoleBadge')
       badge.textContent = profile.role
-      badge.className = `dash-role-badge ${profile.role}`
+      badge.className   = `dash-role-badge ${profile.role}`
 
       // Título
       document.getElementById('dashTitle').textContent =
-        profile.role === 'admin'   ? 'Dashboard — Admin' :
-        profile.role === 'gerente' ? 'Dashboard — Gerente' :
-                                     'Minha Agenda'
+        profile.role === 'admin'   ? 'Dashboard' :
+        profile.role === 'gerente' ? 'Dashboard' : 'Minha Agenda'
 
       document.getElementById('dashSubtitle').textContent =
         profile.role === 'admin'   ? 'Visão completa de todas as unidades' :
         profile.role === 'gerente' ? `${FILIAIS[profile.filial_id] || 'Sua unidade'}` :
                                      `Seus agendamentos · ${profile.nome}`
+
+      // Boas-vindas mobile (abaixo do título)
+      document.getElementById('dashWelcomeMobile').textContent =
+        `Olá, ${profile.nome.split(' ')[0]} · ${profile.role}`
 
       // Filtro de filial só pra admin
       if (profile.role === 'admin') {
@@ -291,24 +379,22 @@
         sel.style.display = 'block'
         Object.entries(FILIAIS).forEach(([id, nome]) => {
           const opt = document.createElement('option')
-          opt.value = id
-          opt.textContent = nome
+          opt.value = id; opt.textContent = nome
           sel.appendChild(opt)
         })
       }
 
       updateMonthLabel()
       document.getElementById('loadingScreen').style.display = 'none'
-      document.getElementById('dashContent').style.display = 'block'
+      document.getElementById('dashContent').style.display   = 'block'
       await loadDash()
     }
 
     function showDenied() {
       document.getElementById('loadingScreen').style.display = 'none'
-      document.getElementById('accessDenied').style.display = 'flex'
+      document.getElementById('accessDenied').style.display  = 'flex'
     }
 
-    // ── MÊS ──────────────────────────────────────────────
     function updateMonthLabel() {
       document.getElementById('monthLabel').textContent = `${MESES[viewMonth]} ${viewYear}`
     }
@@ -321,10 +407,9 @@
       loadDash()
     }
 
-    // ── CARREGAR DADOS ────────────────────────────────────
     window.loadDash = async () => {
-      const tbody  = document.getElementById('dashTableBody')
-      const stats  = document.getElementById('dashStats')
+      const tbody = document.getElementById('dashTableBody')
+      const stats = document.getElementById('dashStats')
       tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">Carregando...</td></tr>`
       stats.innerHTML = ''
 
@@ -338,18 +423,15 @@
         .lte('horario', fim)
         .order('horario', { ascending: true })
 
-      // Filtros por role
       if (currentProfile.role === 'gerente') {
         query = query.eq('filial_id', currentProfile.filial_id)
       } else if (currentProfile.role === 'barbeiro') {
         query = query.eq('barbeiro', currentProfile.nome)
       } else {
-        // admin: filtro opcional por filial
         const filialSel = document.getElementById('filterFilial').value
         if (filialSel) query = query.eq('filial_id', parseInt(filialSel))
       }
 
-      // Filtro status
       const statusSel = document.getElementById('filterStatus').value
       if (statusSel) query = query.eq('status', statusSel)
 
@@ -360,8 +442,7 @@
         return
       }
 
-      // Stats
-      const total      = data.length
+      const total       = data.length
       const confirmados = data.filter(r => r.status === 'confirmado').length
       const pendentes   = data.filter(r => r.status === 'pendente').length
       const receita     = data
@@ -374,7 +455,6 @@
         <div class="stat-card yellow"><div class="stat-n">${pendentes}</div><div class="stat-l">Pendentes</div></div>
         <div class="stat-card"><div class="stat-n">R$&nbsp;${receita.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.')}</div><div class="stat-l">Receita confirmada</div></div>
       `
-
       document.getElementById('dashCount').textContent = total
 
       if (!data.length) {
@@ -383,7 +463,7 @@
       }
 
       tbody.innerHTML = data.map(row => {
-        const d    = new Date(row.horario)
+        const d        = new Date(row.horario)
         const data_fmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`
         const hora_fmt = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
         const cliente  = row.profiles?.nome || '—'

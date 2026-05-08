@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipe — Navalha City</title>
+  <link rel="icon" type="image/jpeg" href="/src/logo.jpeg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black:      #0a0a0a;
+      --dark:       #111111;
+      --card:       #161616;
+      --card2:      #1c1c1c;
+      --border:     #242424;
+      --white:      #f0ece4;
+      --muted:      #888;
+      --text:       #ccc;
+      --green:      #2ecc71;
+      --yellow:     #f39c12;
+      --red:        #e74c3c;
+      --blue:       #3498db;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { min-height: 100%; background: var(--black); color: var(--text); font-family: 'Barlow', sans-serif; }
+
+    /* ── NAV ── */
+    .dash-nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .dash-logo {
+      font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+      color: var(--white); letter-spacing: 3px; text-decoration: none; flex-shrink: 0;
+    }
+    .dash-logo span { color: var(--white); opacity: 0.5; }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted); text-decoration: none;
+      padding: 6px 14px; border-radius: 2px; border: 1px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    .nav-link:hover { color: var(--white); }
+    .nav-link.active { color: var(--white); border-color: var(--border); }
+    .dash-nav-right { display: flex; align-items: center; gap: 12px; }
+    .btn-logout {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
+      text-transform: uppercase; background: none; border: 1px solid var(--border);
+      color: var(--muted); padding: 6px 14px; border-radius: 2px; cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+    .btn-logout:hover { color: var(--red); border-color: var(--red); }
+    @media (max-width: 600px) {
+      .dash-nav { padding: 12px 16px; }
+      .nav-links { display: none; }
+    }
+
+    /* ── LOADING / DENIED ── */
+    #loadingScreen {
+      display: flex; align-items: center; justify-content: center; min-height: 80vh;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--muted);
+    }
+    #accessDenied {
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 80vh; text-align: center; gap: 16px; padding: 24px;
+    }
+    #accessDenied .icon { font-size: 48px; }
+    #accessDenied h2 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--white); letter-spacing: 3px; }
+    #accessDenied p { color: var(--muted); font-size: 14px; }
+
+    /* ── CONTEÚDO ── */
+    #mainContent { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; }
+
+    .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: var(--white); letter-spacing: 4px; line-height: 1; }
+    .page-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--muted); margin-top: 6px; }
+
+    .btn-add {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px;
+      text-transform: uppercase; background: var(--white); color: var(--black);
+      border: none; padding: 12px 24px; border-radius: 2px; cursor: pointer;
+      transition: opacity .2s; white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-add:hover { opacity: .85; }
+
+    /* ── STATS ── */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 18px 20px; }
+    .stat-card .sn { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--white); line-height: 1; }
+    .stat-card .sl { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); margin-top: 4px; text-transform: uppercase; }
+    .stat-card.green .sn { color: var(--green); }
+    .stat-card.yellow .sn { color: var(--yellow); }
+    .stat-card.blue .sn { color: var(--blue); }
+    @media (max-width: 700px) { .stats-row { grid-template-columns: repeat(2,1fr); } }
+
+    /* ── FILTROS ── */
+    .filters-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
+    .filter-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+    .filter-select {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 1px;
+      padding: 8px 14px; border-radius: 2px; cursor: pointer; outline: none;
+    }
+    .filter-select:focus { border-color: var(--white); }
+    .filter-search {
+      background: var(--card); border: 1px solid var(--border); color: var(--white);
+      font-family: 'Barlow', sans-serif; font-size: 13px;
+      padding: 8px 14px; border-radius: 2px; outline: none; min-width: 200px;
+    }
+    .filter-search::placeholder { color: var(--muted); }
+    .filter-search:focus { border-color: var(--white); }
+
+    /* ── GRID DE CARDS ── */
+    #equipeGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    /* SKELETON */
+    .sk-card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 24px; }
+    .sk { background: var(--border); border-radius: 3px; animation: pulse 1.4s ease-in-out infinite; }
+    .sk-avatar { width: 64px; height: 64px; border-radius: 50%; margin-bottom: 14px; }
+    .sk-line { height: 14px; margin-bottom: 10px; }
+    .sk-line.w80 { width: 80%; }
+    .sk-line.w60 { width: 60%; }
+    .sk-line.w40 { width: 40%; }
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+    /* CARD DE MEMBRO */
+    .member-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+      padding: 24px; position: relative; transition: border-color .2s;
+    }
+    .member-card:hover { border-color: #3a3a3a; }
+    .member-card.inativo { opacity: .5; }
+
+    .member-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--card2); border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; margin-bottom: 14px; overflow: hidden; flex-shrink: 0;
+    }
+    .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .member-initial {
+      font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--muted);
+    }
+
+    .member-name { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); letter-spacing: 1px; margin-bottom: 4px; }
+    .member-esp  { font-family: 'Barlow', sans-serif; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+
+    .member-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .badge {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: 3px 8px; border-radius: 2px; border: 1px solid;
+    }
+    .badge-gerente  { color: var(--yellow); border-color: rgba(243,156,18,.4);  background: rgba(243,156,18,.08); }
+    .badge-barbeiro { color: var(--blue);   border-color: rgba(52,152,219,.4);  background: rgba(52,152,219,.08); }
+    .badge-filial   { color: var(--muted);  border-color: var(--border);        background: transparent; font-size: 10px; }
+    .badge-inativo  { color: var(--red);    border-color: rgba(231,76,60,.4);   background: rgba(231,76,60,.08); }
+
+    .member-tel { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 16px; }
+
+    .member-actions { display: flex; gap: 8px; }
+    .btn-edit, .btn-toggle, .btn-del {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: 5px 12px; border-radius: 2px; cursor: pointer;
+      border: 1px solid; background: none; transition: background .15s;
+    }
+    .btn-edit   { color: var(--white); border-color: var(--border); flex: 1; }
+    .btn-edit:hover   { background: rgba(255,255,255,.06); }
+    .btn-toggle { color: var(--yellow); border-color: rgba(243,156,18,.4); }
+    .btn-toggle:hover { background: rgba(243,156,18,.1); }
+    .btn-toggle.ativar { color: var(--green); border-color: rgba(46,204,113,.4); }
+    .btn-toggle.ativar:hover { background: rgba(46,204,113,.1); }
+    .btn-del    { color: var(--red);    border-color: rgba(231,76,60,.4); }
+    .btn-del:hover    { background: rgba(231,76,60,.1); }
+
+    .empty-state {
+      grid-column: 1 / -1; text-align: center; padding: 64px 24px;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 2px; color: var(--muted);
+    }
+
+    /* ── MODAL OVERLAY ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.8); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: var(--dark); border: 1px solid var(--border); border-radius: 6px;
+      padding: 32px 28px; width: 100%; max-width: 480px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--white); letter-spacing: 3px; }
+    .modal-close {
+      background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer;
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      border-radius: 2px; transition: color .2s; line-height: 1;
+    }
+    .modal-close:hover { color: var(--white); }
+
+    .form-field { margin-bottom: 16px; }
+    .form-field label { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; background: var(--card); border: 1px solid var(--border); color: var(--white);
+      font-family: 'Barlow', sans-serif; font-size: 14px; padding: 10px 14px; border-radius: 2px; outline: none;
+      transition: border-color .2s;
+    }
+    .form-input:focus { border-color: var(--white); }
+    .form-input::placeholder { color: var(--muted); }
+    select.form-input { cursor: pointer; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .form-msg {
+      padding: 10px 14px; border-radius: 2px; font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; letter-spacing: 1px; margin-bottom: 14px;
+    }
+    .form-msg.error   { color: var(--red);   border: 1px solid rgba(231,76,60,.4);  background: rgba(231,76,60,.08); }
+    .form-msg.success { color: var(--green); border: 1px solid rgba(46,204,113,.4); background: rgba(46,204,113,.08); }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+    .btn-cancel-modal {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px;
+      text-transform: uppercase; padding: 12px 20px; border-radius: 2px; cursor: pointer;
+      border: 1px solid var(--border); background: none; color: var(--muted); transition: color .2s, border-color .2s;
+    }
+    .btn-cancel-modal:hover { color: var(--white); border-color: var(--muted); }
+    .btn-save {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px;
+      text-transform: uppercase; padding: 12px 20px; border-radius: 2px; cursor: pointer;
+      border: none; background: var(--white); color: var(--black); flex: 1; transition: opacity .2s;
+    }
+    .btn-save:hover { opacity: .85; }
+    .btn-save:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── MODAL DE CONFIRMAÇÃO ── */
+    .confirm-overlay {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,.85); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+      padding: 32px 28px; max-width: 380px; width: 100%; text-align: center;
+    }
+    .confirm-icon-lg { font-size: 40px; margin-bottom: 14px; }
+    .confirm-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--white); letter-spacing: 3px; margin-bottom: 10px; }
+    .confirm-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; letter-spacing: .5px; }
+    .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+    .confirm-btns button {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px;
+      text-transform: uppercase; padding: 10px 20px; border-radius: 2px; cursor: pointer;
+      border: 1px solid; background: none; transition: background .15s;
+    }
+    .btn-conf-cancel { color: var(--muted); border-color: var(--border); }
+    .btn-conf-cancel:hover { color: var(--white); border-color: var(--muted); }
+    .btn-conf-ok { color: var(--red); border-color: rgba(231,76,60,.5); }
+    .btn-conf-ok:hover { background: rgba(231,76,60,.15); }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 400;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 1px;
+      padding: 12px 20px; border-radius: 3px; border: 1px solid;
+      transform: translateY(20px); opacity: 0;
+      transition: opacity .25s, transform .25s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { color: var(--green); border-color: rgba(46,204,113,.4); background: rgba(10,10,10,.95); }
+    #toast.error   { color: var(--red);   border-color: rgba(231,76,60,.4);  background: rgba(10,10,10,.95); }
+
+    @media (max-width: 600px) {
+      #mainContent { padding: 16px; }
+      .page-title { font-size: 36px; }
+      .form-row { grid-template-columns: 1fr; }
+      .modal-box { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="dash-nav">
+    <a href="/" class="dash-logo">Navalha<span>City</span></a>
+    <div class="nav-links">
+      <a href="/dashboard" class="nav-link">Dashboard</a>
+      <a href="/equipe"    class="nav-link active">Equipe</a>
+    </div>
+    <div class="dash-nav-right">
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </nav>
+
+  <!-- ESTADOS -->
+  <div id="loadingScreen">Carregando...</div>
+  <div id="accessDenied">
+    <div class="icon">🔒</div>
+    <h2>Acesso Restrito</h2>
+    <p>Apenas administradores podem acessar esta página.</p>
+    <a href="/" style="color:var(--muted);font-size:13px;margin-top:8px">← Voltar ao site</a>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <div id="mainContent">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">Equipe</div>
+        <div class="page-sub">Gerencie barbeiros e gerentes de todas as unidades</div>
+      </div>
+      <button class="btn-add" onclick="openModal()">+ Adicionar membro</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card"><div class="sn" id="statTotal">—</div><div class="sl">Total da equipe</div></div>
+      <div class="stat-card blue"><div class="sn" id="statBarbeiros">—</div><div class="sl">Barbeiros</div></div>
+      <div class="stat-card yellow"><div class="sn" id="statGerentes">—</div><div class="sl">Gerentes</div></div>
+      <div class="stat-card green"><div class="sn" id="statAtivos">—</div><div class="sl">Ativos</div></div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filters-row">
+      <span class="filter-label">Filtrar:</span>
+      <input class="filter-search" type="text" id="searchInput" placeholder="Buscar por nome..." oninput="renderGrid()">
+      <select class="filter-select" id="filterRole" onchange="renderGrid()">
+        <option value="">Todos os cargos</option>
+        <option value="barbeiro">Barbeiro</option>
+        <option value="gerente">Gerente</option>
+      </select>
+      <select class="filter-select" id="filterFilial" onchange="renderGrid()">
+        <option value="">Todas as unidades</option>
+        <option value="1">Unidade 1</option>
+        <option value="2">Unidade 2</option>
+        <option value="3">Unidade 3</option>
+        <option value="4">Unidade 4</option>
+        <option value="5">Unidade 5</option>
+      </select>
+      <select class="filter-select" id="filterStatus" onchange="renderGrid()">
+        <option value="">Todos os status</option>
+        <option value="ativo">Ativos</option>
+        <option value="inativo">Inativos</option>
+      </select>
+    </div>
+
+    <!-- GRID -->
+    <div id="equipeGrid"></div>
+
+  </div>
+
+  <!-- ── MODAL ADICIONAR / EDITAR ── -->
+  <div class="modal-overlay" id="memberModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Novo Membro</div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+
+      <div id="modalMsg" style="display:none"></div>
+
+      <input type="hidden" id="editingId">
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nome completo</label>
+          <input class="form-input" type="text" id="fNome" placeholder="Ex: João Silva">
+        </div>
+        <div class="form-field">
+          <label>WhatsApp</label>
+          <input class="form-input" type="tel" id="fTel" placeholder="(13) 99999-9999" maxlength="15">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Cargo</label>
+          <select class="form-input" id="fRole">
+            <option value="barbeiro">Barbeiro</option>
+            <option value="gerente">Gerente</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Unidade</label>
+          <select class="form-input" id="fFilial">
+            <option value="1">Unidade 1 — Itapema</option>
+            <option value="2">Unidade 2 — Zona Norte</option>
+            <option value="3">Unidade 3 — Zona Sul</option>
+            <option value="4">Unidade 4 — Zona Leste</option>
+            <option value="5">Unidade 5 — Zona Oeste</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>Especialidade</label>
+        <input class="form-input" type="text" id="fEsp" placeholder="Ex: Degradê & Navalhado">
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nota (ex: 4.9)</label>
+          <input class="form-input" type="number" id="fNota" placeholder="4.9" min="1" max="5" step="0.1">
+        </div>
+        <div class="form-field">
+          <label>Status</label>
+          <select class="form-input" id="fStatus">
+            <option value="ativo">Ativo</option>
+            <option value="inativo">Inativo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel-modal" onclick="closeModal()">Cancelar</button>
+        <button class="btn-save" id="btnSave" onclick="saveMember()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL CONFIRMAÇÃO EXCLUSÃO ── -->
+  <div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-box">
+      <div class="confirm-icon-lg">🗑️</div>
+      <div class="confirm-title">Remover membro</div>
+      <div class="confirm-sub" id="confirmSub">Tem certeza? Esta ação não pode ser desfeita.</div>
+      <div class="confirm-btns">
+        <button class="btn-conf-cancel" onclick="closeConfirm()">Cancelar</button>
+        <button class="btn-conf-ok" id="btnConfirmOk" onclick="executeDelete()">Sim, remover</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+    const SUPABASE_URL  = 'https://lttajvnvbnmyowvwrunw.supabase.co'
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0dGFqdm52Ym5teW93dndydW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTk1MTQsImV4cCI6MjA5MzczNTUxNH0.oG8iO96DftAmb1hLuGSNscyG2647TbncbeuN98clKus'
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON)
+
+    const FILIAIS = { 1:'Unidade 1', 2:'Unidade 2', 3:'Unidade 3', 4:'Unidade 4', 5:'Unidade 5' }
+
+    let allMembers = []
+    let deletingId = null
+
+    // ─── AUTH ─────────────────────────────────────────────
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { showDenied(); return }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+
+      if (profile?.role !== 'admin') { showDenied(); return }
+
+      document.getElementById('loadingScreen').style.display = 'none'
+      document.getElementById('mainContent').style.display   = 'block'
+      await loadMembers()
+    }
+
+    function showDenied() {
+      document.getElementById('loadingScreen').style.display = 'none'
+      document.getElementById('accessDenied').style.display  = 'flex'
+    }
+
+    // ─── CARREGAR MEMBROS ─────────────────────────────────
+    async function loadMembers() {
+      showSkeletons()
+      const { data, error } = await supabase
+        .from('equipe')
+        .select('*')
+        .order('nome', { ascending: true })
+
+      if (error) { showToast('Erro ao carregar equipe.', 'error'); return }
+
+      allMembers = data || []
+      updateStats()
+      renderGrid()
+    }
+
+    function showSkeletons() {
+      const grid = document.getElementById('equipeGrid')
+      grid.innerHTML = Array(6).fill(0).map(() => `
+        <div class="sk-card">
+          <div class="sk sk-avatar"></div>
+          <div class="sk sk-line w80"></div>
+          <div class="sk sk-line w60"></div>
+          <div class="sk sk-line w40"></div>
+        </div>
+      `).join('')
+    }
+
+    function updateStats() {
+      const ativos     = allMembers.filter(m => m.status !== 'inativo')
+      const barbeiros  = allMembers.filter(m => m.role === 'barbeiro')
+      const gerentes   = allMembers.filter(m => m.role === 'gerente')
+      document.getElementById('statTotal').textContent     = allMembers.length
+      document.getElementById('statBarbeiros').textContent = barbeiros.length
+      document.getElementById('statGerentes').textContent  = gerentes.length
+      document.getElementById('statAtivos').textContent    = ativos.length
+    }
+
+    // ─── RENDER GRID ─────────────────────────────────────
+    window.renderGrid = function() {
+      const search  = document.getElementById('searchInput').value.toLowerCase().trim()
+      const role    = document.getElementById('filterRole').value
+      const filial  = document.getElementById('filterFilial').value
+      const status  = document.getElementById('filterStatus').value
+
+      const filtered = allMembers.filter(m => {
+        if (search  && !m.nome.toLowerCase().includes(search))     return false
+        if (role    && m.role     !== role)                        return false
+        if (filial  && String(m.filial_id) !== filial)            return false
+        if (status  && m.status   !== status &&
+            !(status === 'ativo' && !m.status))                    return false
+        return true
+      })
+
+      const grid = document.getElementById('equipeGrid')
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div class="empty-state">Nenhum membro encontrado.</div>`
+        return
+      }
+
+      grid.innerHTML = filtered.map(m => {
+        const inativo  = m.status === 'inativo'
+        const inicial  = (m.nome || '?').charAt(0).toUpperCase()
+        const filialNm = FILIAIS[m.filial_id] || `Unidade ${m.filial_id}`
+        const nota     = m.nota ? `${m.nota} ★` : ''
+
+        return `
+          <div class="member-card${inativo ? ' inativo' : ''}" id="card-${m.id}">
+            <div class="member-avatar">
+              ${m.foto_url
+                ? `<img src="${esc(m.foto_url)}" alt="${esc(m.nome)}">`
+                : `<div class="member-initial">${inicial}</div>`}
+            </div>
+            <div class="member-name">${esc(m.nome)}</div>
+            <div class="member-esp">${esc(m.especialidade || '—')}${nota ? ` · ${nota}` : ''}</div>
+            <div class="member-badges">
+              <span class="badge badge-${m.role}">${m.role}</span>
+              <span class="badge badge-filial">${esc(filialNm)}</span>
+              ${inativo ? `<span class="badge badge-inativo">Inativo</span>` : ''}
+            </div>
+            ${m.telefone ? `<div class="member-tel">📱 ${esc(m.telefone)}</div>` : ''}
+            <div class="member-actions">
+              <button class="btn-edit"   onclick="openModal('${m.id}')">Editar</button>
+              <button class="btn-toggle ${inativo ? 'ativar' : ''}"
+                      onclick="toggleStatus('${m.id}', '${inativo ? 'ativo' : 'inativo'}')">
+                ${inativo ? 'Ativar' : 'Pausar'}
+              </button>
+              <button class="btn-del" onclick="promptDelete('${m.id}', '${esc(m.nome)}')">✕</button>
+            </div>
+          </div>
+        `
+      }).join('')
+    }
+
+    // ─── MODAL ADICIONAR / EDITAR ─────────────────────────
+    window.openModal = function(id = null) {
+      const modal = document.getElementById('memberModal')
+      clearModalMsg()
+
+      if (id) {
+        const m = allMembers.find(x => x.id === id)
+        if (!m) return
+        document.getElementById('modalTitle').textContent = 'Editar Membro'
+        document.getElementById('editingId').value        = id
+        document.getElementById('fNome').value    = m.nome        || ''
+        document.getElementById('fTel').value     = m.telefone    || ''
+        document.getElementById('fRole').value    = m.role        || 'barbeiro'
+        document.getElementById('fFilial').value  = m.filial_id   || '1'
+        document.getElementById('fEsp').value     = m.especialidade || ''
+        document.getElementById('fNota').value    = m.nota        || ''
+        document.getElementById('fStatus').value  = m.status      || 'ativo'
+      } else {
+        document.getElementById('modalTitle').textContent = 'Novo Membro'
+        document.getElementById('editingId').value        = ''
+        document.getElementById('fNome').value    = ''
+        document.getElementById('fTel').value     = ''
+        document.getElementById('fRole').value    = 'barbeiro'
+        document.getElementById('fFilial').value  = '1'
+        document.getElementById('fEsp').value     = ''
+        document.getElementById('fNota').value    = ''
+        document.getElementById('fStatus').value  = 'ativo'
+      }
+
+      modal.classList.add('open')
+      document.getElementById('fNome').focus()
+    }
+
+    window.closeModal = function() {
+      document.getElementById('memberModal').classList.remove('open')
+    }
+
+    window.saveMember = async function() {
+      const btn  = document.getElementById('btnSave')
+      const id   = document.getElementById('editingId').value.trim()
+      const nome = document.getElementById('fNome').value.trim()
+      const tel  = document.getElementById('fTel').value.trim()
+      const role = document.getElementById('fRole').value
+      const filial_id  = parseInt(document.getElementById('fFilial').value)
+      const especialidade = document.getElementById('fEsp').value.trim()
+      const nota   = parseFloat(document.getElementById('fNota').value) || null
+      const status = document.getElementById('fStatus').value
+
+      clearModalMsg()
+      if (!nome) { showModalMsg('Informe o nome do membro.', 'error'); return }
+
+      btn.textContent = 'Salvando...'
+      btn.disabled    = true
+
+      const payload = { nome, telefone: tel, role, filial_id, especialidade, nota, status }
+
+      try {
+        let error
+        if (id) {
+          ;({ error } = await supabase.from('equipe').update(payload).eq('id', id))
+        } else {
+          ;({ error } = await supabase.from('equipe').insert(payload))
+        }
+
+        if (error) throw new Error(error.message)
+
+        closeModal()
+        showToast(id ? 'Membro atualizado!' : 'Membro adicionado!', 'success')
+        await loadMembers()
+      } catch (err) {
+        showModalMsg(err.message || 'Erro ao salvar. Tente novamente.', 'error')
+      } finally {
+        btn.textContent = 'Salvar'
+        btn.disabled    = false
+      }
+    }
+
+    // ─── TOGGLE STATUS ────────────────────────────────────
+    window.toggleStatus = async function(id, novoStatus) {
+      const { error } = await supabase
+        .from('equipe')
+        .update({ status: novoStatus })
+        .eq('id', id)
+
+      if (error) { showToast('Erro ao atualizar status.', 'error'); return }
+
+      const idx = allMembers.findIndex(m => m.id === id)
+      if (idx !== -1) allMembers[idx].status = novoStatus
+      updateStats()
+      renderGrid()
+      showToast(novoStatus === 'ativo' ? 'Membro ativado.' : 'Membro pausado.', 'success')
+    }
+
+    // ─── EXCLUSÃO ─────────────────────────────────────────
+    window.promptDelete = function(id, nome) {
+      deletingId = id
+      document.getElementById('confirmSub').textContent = `Remover "${nome}" da equipe? Esta ação não pode ser desfeita.`
+      document.getElementById('confirmModal').classList.add('open')
+    }
+
+    window.closeConfirm = function() {
+      document.getElementById('confirmModal').classList.remove('open')
+      deletingId = null
+    }
+
+    window.executeDelete = async function() {
+      if (!deletingId) return
+      const btn = document.getElementById('btnConfirmOk')
+      btn.textContent = 'Removendo...'
+      btn.disabled    = true
+
+      const { error } = await supabase.from('equipe').delete().eq('id', deletingId)
+
+      btn.textContent = 'Sim, remover'
+      btn.disabled    = false
+      closeConfirm()
+
+      if (error) { showToast('Erro ao remover.', 'error'); return }
+
+      allMembers = allMembers.filter(m => m.id !== deletingId)
+      updateStats()
+      renderGrid()
+      showToast('Membro removido.', 'success')
+    }
+
+    // ─── LOGOUT ───────────────────────────────────────────
+    window.doLogout = async function() {
+      await supabase.auth.signOut()
+      window.location.href = '/'
+    }
+
+    // ─── HELPERS ──────────────────────────────────────────
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+    }
+
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast')
+      t.textContent = msg
+      t.className   = `show ${type}`
+      clearTimeout(t._timer)
+      t._timer = setTimeout(() => { t.className = type }, 3000)
+    }
+
+    function showModalMsg(msg, type) {
+      const el = document.getElementById('modalMsg')
+      el.textContent = msg
+      el.className   = `form-msg ${type}`
+      el.style.display = 'block'
+    }
+
+    function clearModalMsg() {
+      const el = document.getElementById('modalMsg')
+      el.style.display = 'none'
+      el.textContent   = ''
+    }
+
+    // Máscara de telefone
+    document.getElementById('fTel').addEventListener('input', function() {
+      let v = this.value.replace(/\D/g,'').slice(0,11)
+      if (v.length <= 10) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3')
+      else                v = v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3')
+      this.value = v.replace(/-$/,'')
+    })
+
+    // Fecha modais ao clicar fora
+    document.getElementById('memberModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeModal()
+    })
+    document.getElementById('confirmModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeConfirm()
+    })
+
+    init()
+  </script>
+</body>
+</html>

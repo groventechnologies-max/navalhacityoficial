@@ -238,7 +238,37 @@
     .confirm-box-btn-ok.yellow { color: var(--yellow); border-color: rgba(243,156,18,.5); }
     .confirm-box-btn-ok.yellow:hover { background: rgba(243,156,18,.12); }
 
-    /* ── MÊS NAV ── */
+    /* ── TOGGLE MÊS / DIA ── */
+    .view-toggle {
+      display: flex; background: var(--card); border: 1px solid var(--border);
+      border-radius: 2px; overflow: hidden; flex-shrink: 0;
+    }
+    .view-toggle-btn {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px;
+      text-transform: uppercase; padding: 7px 16px; cursor: pointer;
+      background: none; border: none; color: var(--muted); transition: color .2s, background .2s;
+    }
+    .view-toggle-btn.active { background: var(--border); color: var(--white); }
+    .view-toggle-btn:not(.active):hover { color: var(--white); }
+
+    /* ── PERÍODO NAV (mês e dia usam o mesmo estilo) ── */
+    .period-nav { display: flex; align-items: center; gap: 12px; }
+    .period-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      width: 32px; height: 32px; border-radius: 2px; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; transition: color .2s, border-color .2s;
+    }
+    .period-btn:hover { color: var(--white); border-color: var(--orange-dim); }
+    .period-label { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--white); letter-spacing: 2px; min-width: 180px; text-align: center; }
+    .btn-hoje {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; background: none; border: 1px solid var(--border);
+      color: var(--muted); padding: 5px 12px; border-radius: 2px; cursor: pointer;
+      transition: color .2s, border-color .2s; white-space: nowrap;
+    }
+    .btn-hoje:hover { color: var(--white); border-color: var(--orange-dim); }
+
+    /* ── MÊS NAV (alias para compatibilidade) ── */
     .month-nav { display: flex; align-items: center; gap: 12px; }
     .month-btn {
       background: none; border: 1px solid var(--border); color: var(--muted);
@@ -353,12 +383,20 @@
     </div>
 
     <div class="dash-filters">
-      <span class="filter-label">Mês:</span>
-      <div class="month-nav">
-        <button class="month-btn" onclick="changeMonth(-1)">‹</button>
-        <div class="month-label" id="monthLabel"></div>
-        <button class="month-btn" onclick="changeMonth(1)">›</button>
+      <!-- Toggle modo -->
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" id="btnModeMes" onclick="setMode('mes')">Mês</button>
+        <button class="view-toggle-btn" id="btnModeDia" onclick="setMode('dia')">Dia</button>
       </div>
+
+      <!-- Navegação de período -->
+      <div class="period-nav">
+        <button class="period-btn" onclick="changePeriod(-1)">‹</button>
+        <div class="period-label" id="periodLabel"></div>
+        <button class="period-btn" onclick="changePeriod(1)">›</button>
+      </div>
+      <button class="btn-hoje" id="btnHoje" style="display:none" onclick="goToToday()">Hoje</button>
+
       <select class="filter-select" id="filterFilial" onchange="loadDash()" style="display:none">
         <option value="">Todas as unidades</option>
       </select>
@@ -408,8 +446,10 @@
 
     let currentUser    = null
     let currentProfile = null
+    let viewMode  = 'mes'
     let viewMonth = new Date().getMonth()
     let viewYear  = new Date().getFullYear()
+    let viewDay   = new Date().getDate()
 
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -462,7 +502,7 @@
         })
       }
 
-      updateMonthLabel()
+      updatePeriodLabel()
       document.getElementById('loadingScreen').style.display = 'none'
       document.getElementById('dashContent').style.display   = 'block'
       await loadDash()
@@ -473,17 +513,70 @@
       document.getElementById('accessDenied').style.display  = 'flex'
     }
 
-    function updateMonthLabel() {
-      document.getElementById('monthLabel').textContent = `${MESES[viewMonth]} ${viewYear}`
+    const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+
+    function updatePeriodLabel() {
+      const el = document.getElementById('periodLabel')
+      if (viewMode === 'mes') {
+        el.textContent = `${MESES[viewMonth]} ${viewYear}`
+        el.style.minWidth = '180px'
+      } else {
+        const d = new Date(viewYear, viewMonth, viewDay)
+        const hoje = new Date()
+        const isHoje = d.toDateString() === hoje.toDateString()
+        const diaSem = DIAS_SEMANA[d.getDay()]
+        el.textContent = `${diaSem}  ${String(viewDay).padStart(2,'0')}/${String(viewMonth+1).padStart(2,'0')}`
+        el.style.minWidth = '160px'
+        document.getElementById('btnHoje').style.display = isHoje ? 'none' : ''
+      }
     }
 
-    window.changeMonth = (dir) => {
-      viewMonth += dir
-      if (viewMonth > 11) { viewMonth = 0;  viewYear++ }
-      if (viewMonth < 0)  { viewMonth = 11; viewYear-- }
-      updateMonthLabel()
+    window.setMode = (mode) => {
+      viewMode = mode
+      document.getElementById('btnModeMes').classList.toggle('active', mode === 'mes')
+      document.getElementById('btnModeDia').classList.toggle('active', mode === 'dia')
+      // ao entrar no modo dia, posiciona no dia atual do mês visualizado
+      if (mode === 'dia') {
+        const hoje = new Date()
+        if (viewMonth === hoje.getMonth() && viewYear === hoje.getFullYear()) {
+          viewDay = hoje.getDate()
+        } else {
+          viewDay = 1
+        }
+        document.getElementById('btnHoje').style.display = ''
+      } else {
+        document.getElementById('btnHoje').style.display = 'none'
+      }
+      updatePeriodLabel()
       loadDash()
     }
+
+    window.changePeriod = (dir) => {
+      if (viewMode === 'mes') {
+        viewMonth += dir
+        if (viewMonth > 11) { viewMonth = 0;  viewYear++ }
+        if (viewMonth < 0)  { viewMonth = 11; viewYear-- }
+      } else {
+        const d = new Date(viewYear, viewMonth, viewDay + dir)
+        viewYear  = d.getFullYear()
+        viewMonth = d.getMonth()
+        viewDay   = d.getDate()
+      }
+      updatePeriodLabel()
+      loadDash()
+    }
+
+    window.goToToday = () => {
+      const hoje = new Date()
+      viewYear  = hoje.getFullYear()
+      viewMonth = hoje.getMonth()
+      viewDay   = hoje.getDate()
+      updatePeriodLabel()
+      loadDash()
+    }
+
+    // manter compatibilidade com qualquer referência antiga
+    window.changeMonth = (dir) => window.changePeriod(dir)
 
     window.loadDash = async () => {
       const tbody = document.getElementById('dashTableBody')
@@ -491,8 +584,12 @@
       tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">Carregando...</td></tr>`
       stats.innerHTML = ''
 
-      const inicio = new Date(viewYear, viewMonth, 1).toISOString()
-      const fim    = new Date(viewYear, viewMonth + 1, 0, 23, 59, 59).toISOString()
+      const inicio = viewMode === 'mes'
+        ? new Date(viewYear, viewMonth, 1).toISOString()
+        : new Date(viewYear, viewMonth, viewDay, 0, 0, 0).toISOString()
+      const fim = viewMode === 'mes'
+        ? new Date(viewYear, viewMonth + 1, 0, 23, 59, 59).toISOString()
+        : new Date(viewYear, viewMonth, viewDay, 23, 59, 59).toISOString()
 
       let query = supabase
         .from('agendamentos')
@@ -527,11 +624,12 @@
         .filter(r => r.status === 'confirmado')
         .reduce((sum, r) => sum + (parseFloat(r.preco?.replace(/[^\d,]/g,'').replace(',','.')) || 0), 0)
 
+      const lblTotal = viewMode === 'mes' ? 'Total do m\u00eas' : 'Total do dia'
       stats.innerHTML = `
-        <div class="stat-card"><div class="stat-n">${total}</div><div class="stat-l">Total do mês</div></div>
+        <div class="stat-card"><div class="stat-n">${total}</div><div class="stat-l">${lblTotal}</div></div>
         <div class="stat-card green"><div class="stat-n">${confirmados}</div><div class="stat-l">Confirmados</div></div>
         <div class="stat-card yellow"><div class="stat-n">${pendentes}</div><div class="stat-l">Pendentes</div></div>
-        <div class="stat-card"><div class="stat-n">R$&nbsp;${receita.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.')}</div><div class="stat-l">Receita confirmada</div></div>
+        <div class="stat-card"><div class="stat-n">R$\u00a0${receita.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.')}</div><div class="stat-l">Receita confirmada</div></div>
       `
       document.getElementById('dashCount').textContent = total
 

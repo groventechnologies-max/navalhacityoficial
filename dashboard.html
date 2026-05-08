@@ -98,6 +98,61 @@
       .dash-role-badge { font-size: 10px; padding: 3px 8px; letter-spacing: 1px; }
     }
 
+    /* ── HAMBURGUER DO DASHBOARD ── */
+    .dash-hamburger {
+      display: none;
+      flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+      width: 36px; height: 36px;
+      background: none; border: 1px solid var(--border);
+      cursor: pointer; padding: 0; flex-shrink: 0;
+      transition: border-color .2s;
+    }
+    .dash-hamburger:hover { border-color: var(--orange-dim); }
+    .dash-hamburger span {
+      display: block; width: 16px; height: 1.5px;
+      background: var(--muted); transition: background .2s, transform .3s, opacity .2s;
+      transform-origin: center;
+    }
+    .dash-hamburger.open span     { background: var(--white); }
+    .dash-hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .dash-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .dash-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+    .dash-mobile-menu {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,.85); backdrop-filter: blur(16px);
+      z-index: 200; flex-direction: column;
+      padding-top: 64px;
+    }
+    .dash-mobile-menu.open { display: flex; }
+    .dash-mobile-link {
+      display: flex; align-items: center; gap: 14px;
+      padding: 20px 28px; border-bottom: 1px solid var(--border);
+      font-family: 'Barlow Condensed', sans-serif; font-size: 18px;
+      font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      transition: color .2s;
+    }
+    .dash-mobile-link:hover, .dash-mobile-link.active { color: var(--white); }
+    .dash-mobile-close {
+      position: absolute; top: 16px; right: 18px;
+      background: none; border: none; color: var(--muted);
+      font-size: 22px; cursor: pointer; padding: 4px;
+      transition: color .2s;
+    }
+    .dash-mobile-close:hover { color: var(--white); }
+    .dash-mobile-user {
+      padding: 20px 28px;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px;
+      letter-spacing: 1px; color: var(--muted);
+      margin-top: auto; border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .dash-hamburger { display: flex; }
+    }
+
     /* ── BLOQUEIO ── */
     #accessDenied {
       display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -350,8 +405,19 @@
       <span class="dash-user-name" id="navUserName"></span>
       <span class="dash-role-badge" id="navRoleBadge"></span>
       <button class="btn-logout" onclick="dashLogout()">Sair</button>
+      <button class="dash-hamburger" id="dashHamburger" onclick="toggleDashMenu()">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
+
+  <!-- MENU MOBILE DO DASHBOARD -->
+  <div class="dash-mobile-menu" id="dashMobileMenu">
+    <button class="dash-mobile-close" onclick="toggleDashMenu()">&#x2715;</button>
+    <a href="/dashboard" class="dash-mobile-link active">Dashboard</a>
+    <a href="/equipe" class="dash-mobile-link" id="mobileEquipeLink" style="display:none">Equipe</a>
+    <div class="dash-mobile-user" id="dashMobileUser"></div>
+  </div>
 
   <div id="loadingScreen">Carregando...</div>
 
@@ -470,12 +536,20 @@
       // Botão Equipe — só admin
       if (profile.role === 'admin') {
         document.getElementById('btnEquipe').style.display = ''
+        document.getElementById('mobileEquipeLink').style.display = ''
       }
 
       document.getElementById('navUserName').textContent = profile.nome.split(' ')[0]
       const badge = document.getElementById('navRoleBadge')
       badge.textContent = profile.role
       badge.className   = `dash-role-badge ${profile.role}`
+
+      // Menu mobile: nome + role + botão sair
+      document.getElementById('dashMobileUser').innerHTML = `
+        <div style="color:var(--white);font-size:15px;margin-bottom:4px">${profile.nome.split(' ')[0]}</div>
+        <div style="margin-bottom:16px">${profile.role}</div>
+        <button onclick="dashLogout()" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:8px 16px;border-radius:2px;cursor:pointer">Sair da conta</button>
+      `
 
       // Título
       document.getElementById('dashTitle').textContent =
@@ -577,6 +651,14 @@
 
     // manter compatibilidade com qualquer referência antiga
     window.changeMonth = (dir) => window.changePeriod(dir)
+
+    window.toggleDashMenu = () => {
+      const menu = document.getElementById('dashMobileMenu')
+      const btn  = document.getElementById('dashHamburger')
+      const open = menu.classList.toggle('open')
+      btn.classList.toggle('open', open)
+      document.body.style.overflow = open ? 'hidden' : ''
+    }
 
     window.loadDash = async () => {
       const tbody = document.getElementById('dashTableBody')

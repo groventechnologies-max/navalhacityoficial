@@ -246,6 +246,32 @@
     .btn-save:hover { opacity: .85; }
     .btn-save:disabled { opacity: .4; cursor: not-allowed; }
 
+    /* ── PHOTO UPLOAD ── */
+    .photo-upload-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .photo-upload-preview {
+      width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+      background: var(--card2); border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; overflow: hidden; cursor: pointer; transition: border-color .2s;
+    }
+    .photo-upload-preview:hover { border-color: var(--white); }
+    .photo-upload-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-upload-info { flex: 1; }
+    .btn-choose-photo {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 1.5px;
+      text-transform: uppercase; background: none; border: 1px solid var(--border);
+      color: var(--muted); padding: 6px 14px; border-radius: 2px; cursor: pointer;
+      transition: color .2s, border-color .2s; display: block; margin-bottom: 6px;
+    }
+    .btn-choose-photo:hover { color: var(--white); border-color: var(--muted); }
+    .photo-upload-note { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1px; color: var(--muted); }
+    .btn-remove-photo {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1px;
+      text-transform: uppercase; background: none; border: none; color: var(--red);
+      cursor: pointer; padding: 0; margin-top: 4px; display: none;
+    }
+    .btn-remove-photo.visible { display: block; }
+
     /* ── MODAL DE CONFIRMAÇÃO ── */
     .confirm-overlay {
       display: none; position: fixed; inset: 0; z-index: 300;
@@ -375,6 +401,21 @@
 
       <input type="hidden" id="editingId">
 
+      <div class="form-field">
+        <label>Foto</label>
+        <div class="photo-upload-row">
+          <div class="photo-upload-preview" id="photoPreview" onclick="document.getElementById('photoInput').click()">
+            <span id="photoPreviewIcon">📷</span>
+          </div>
+          <div class="photo-upload-info">
+            <button type="button" class="btn-choose-photo" onclick="document.getElementById('photoInput').click()">Escolher foto</button>
+            <div class="photo-upload-note">JPG ou PNG · máx. 2MB</div>
+            <button type="button" class="btn-remove-photo" id="btnRemovePhoto" onclick="removePhoto()">Remover foto</button>
+          </div>
+        </div>
+        <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="onPhotoSelected(this)">
+      </div>
+
       <div class="form-row">
         <div class="form-field">
           <label>Nome completo</label>
@@ -459,6 +500,8 @@
 
     let allMembers = []
     let deletingId = null
+    let photoFile    = null
+    let photoRemoved = false
 
     // ─── AUTH ─────────────────────────────────────────────
     async function init() {
@@ -581,6 +624,9 @@
     window.openModal = function(id = null) {
       const modal = document.getElementById('memberModal')
       clearModalMsg()
+      photoFile    = null
+      photoRemoved = false
+      document.getElementById('photoInput').value = ''
 
       if (id) {
         const m = allMembers.find(x => x.id === id)
@@ -594,6 +640,7 @@
         document.getElementById('fEsp').value     = m.especialidade || ''
         document.getElementById('fNota').value    = m.nota        || ''
         document.getElementById('fStatus').value  = m.status      || 'ativo'
+        setPhotoPreview(m.foto_url || null)
       } else {
         document.getElementById('modalTitle').textContent = 'Novo Membro'
         document.getElementById('editingId').value        = ''
@@ -604,14 +651,56 @@
         document.getElementById('fEsp').value     = ''
         document.getElementById('fNota').value    = ''
         document.getElementById('fStatus').value  = 'ativo'
+        setPhotoPreview(null)
       }
 
       modal.classList.add('open')
       document.getElementById('fNome').focus()
     }
 
+    function setPhotoPreview(url) {
+      const preview    = document.getElementById('photoPreview')
+      const icon       = document.getElementById('photoPreviewIcon')
+      const btnRemove  = document.getElementById('btnRemovePhoto')
+      if (url) {
+        preview.innerHTML = `<img src="${esc(url)}" alt="foto">`
+        btnRemove.classList.add('visible')
+      } else {
+        preview.innerHTML = '<span id="photoPreviewIcon">📷</span>'
+        btnRemove.classList.remove('visible')
+      }
+    }
+
+    window.onPhotoSelected = function(input) {
+      const file = input.files[0]
+      if (!file) return
+      if (file.size > 2 * 1024 * 1024) {
+        showModalMsg('A foto deve ter no máximo 2MB.', 'error')
+        input.value = ''
+        return
+      }
+      photoFile    = file
+      photoRemoved = false
+      const reader = new FileReader()
+      reader.onload = e => {
+        const preview = document.getElementById('photoPreview')
+        preview.innerHTML = `<img src="${e.target.result}" alt="preview">`
+        document.getElementById('btnRemovePhoto').classList.add('visible')
+      }
+      reader.readAsDataURL(file)
+    }
+
+    window.removePhoto = function() {
+      photoFile    = null
+      photoRemoved = true
+      setPhotoPreview(null)
+    }
+
     window.closeModal = function() {
       document.getElementById('memberModal').classList.remove('open')
+      photoFile    = null
+      photoRemoved = false
+      document.getElementById('photoInput').value = ''
     }
 
     window.saveMember = async function() {
@@ -631,9 +720,27 @@
       btn.textContent = 'Salvando...'
       btn.disabled    = true
 
-      const payload = { nome, telefone: tel, role, filial_id, especialidade, nota, status }
-
       try {
+        // ── Resolve foto_url ──────────────────────────────
+        let foto_url = id ? (allMembers.find(x => x.id === id)?.foto_url ?? null) : null
+
+        if (photoRemoved) {
+          foto_url = null
+        } else if (photoFile) {
+          btn.textContent = 'Enviando foto...'
+          const ext  = photoFile.name.split('.').pop().toLowerCase()
+          const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+          const { data: up, error: upErr } = await supabase.storage
+            .from('equipe')
+            .upload(path, photoFile, { upsert: true, contentType: photoFile.type })
+          if (upErr) throw new Error('Erro ao enviar foto: ' + upErr.message)
+          const { data: urlData } = supabase.storage.from('equipe').getPublicUrl(up.path)
+          foto_url = urlData.publicUrl
+        }
+
+        btn.textContent = 'Salvando...'
+        const payload = { nome, telefone: tel, role, filial_id, especialidade, nota, status, foto_url }
+
         let error
         if (id) {
           ;({ error } = await supabase.from('equipe').update(payload).eq('id', id))

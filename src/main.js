@@ -584,41 +584,6 @@ function renderPerfil() {
   document.getElementById('profileContent').innerHTML = `
     <div class="section-label">${f.nome} — ${f.regiao}</div>
 
-    <div class="profile-photos-wrap">
-      <div class="profile-photos" id="photosCarousel">
-        ${[
-          { key: 'principal', label: 'Foto Principal' },
-          { key: 'ambiente',  label: 'Ambiente' },
-          { key: 'detalhe',   label: 'Detalhe' },
-          { key: 'cadeira',   label: 'Cadeira' },
-          { key: 'produtos',  label: 'Produtos' },
-        ].map(({ key, label }) => {
-          const url = f.fotos && f.fotos[key]
-          return `<div class="photo-placeholder${url ? ' has-photo' : ''}" data-label="${label}">
-            ${url ? `<img src="${url}" alt="${label}">` : ''}
-          </div>`
-        }).join('')}
-      </div>
-      <button class="photo-nav photo-nav-prev" onclick="scrollPhotos(-1)">←</button>
-      <button class="photo-nav photo-nav-next" onclick="scrollPhotos(1)">→</button>
-      <div class="photo-counter" id="photoCounter">1 / 5</div>
-    </div>
-
-    <div class="profile-desc">
-      <div>
-        <h2 class="profile-desc-title">${f.nome}</h2>
-        <p class="profile-desc-text">${f.descricao}</p>
-      </div>
-      <div class="profile-stats">
-        ${f.stats.map(s => `
-          <div class="stat">
-            <div class="stat-num">${s.n}</div>
-            <div class="stat-label">${s.l}</div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
     <div class="barbers-label">Passo 02 — Escolha seu barbeiro</div>
     <div class="barbers-title">${f.barbeiros.length} Profissionais Disponíveis</div>
 
@@ -637,6 +602,41 @@ function renderPerfil() {
           </div>
         </div>
       `).join('')}
+    </div>
+
+    <div class="profile-desc">
+      <div>
+        <h2 class="profile-desc-title">${f.nome}</h2>
+        <p class="profile-desc-text">${f.descricao}</p>
+      </div>
+      <div class="profile-stats">
+        ${f.stats.map(s => `
+          <div class="stat">
+            <div class="stat-num">${s.n}</div>
+            <div class="stat-label">${s.l}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="profile-photos-wrap">
+      <div class="profile-photos" id="photosCarousel">
+        ${[
+          { key: 'principal', label: 'Foto Principal' },
+          { key: 'ambiente',  label: 'Ambiente' },
+          { key: 'detalhe',   label: 'Detalhe' },
+          { key: 'cadeira',   label: 'Cadeira' },
+          { key: 'produtos',  label: 'Produtos' },
+        ].map(({ key, label }) => {
+          const url = f.fotos && f.fotos[key]
+          return `<div class="photo-placeholder${url ? ' has-photo' : ''}" data-label="${label}">
+            ${url ? `<img src="${url}" alt="${label}">` : ''}
+          </div>`
+        }).join('')}
+      </div>
+      <button class="photo-nav photo-nav-prev" onclick="scrollPhotos(-1)">←</button>
+      <button class="photo-nav photo-nav-next" onclick="scrollPhotos(1)">→</button>
+      <div class="photo-counter" id="photoCounter">1 / 5</div>
     </div>
 
     <footer class="step-footer">

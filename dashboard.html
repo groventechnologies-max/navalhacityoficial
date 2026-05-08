@@ -182,6 +182,52 @@
     .badge-cancelado  { background: rgba(231,76,60,.12);   color: var(--red);    border: 1px solid rgba(231,76,60,.3); }
     .empty-row td { text-align: center; color: var(--muted); padding: 32px; }
 
+    /* ── AÇÕES ── */
+    .btn-action {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: 4px 10px; border-radius: 2px; cursor: pointer;
+      border: 1px solid; background: none; transition: background .15s, color .15s;
+    }
+    .btn-action.cancelar { color: var(--yellow); border-color: rgba(243,156,18,.4); }
+    .btn-action.cancelar:hover { background: rgba(243,156,18,.12); }
+    .btn-action.apagar   { color: var(--red);    border-color: rgba(231,76,60,.4); }
+    .btn-action.apagar:hover   { background: rgba(231,76,60,.12); }
+    .btn-action:disabled { opacity: .4; cursor: not-allowed; }
+    .td-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+    /* ── MODAL DE CONFIRMAÇÃO ── */
+    .confirm-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.75); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+      padding: 32px 28px; max-width: 380px; width: 90%; text-align: center;
+    }
+    .confirm-box-icon { font-size: 36px; margin-bottom: 12px; }
+    .confirm-box-title {
+      font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--white);
+      letter-spacing: 3px; margin-bottom: 8px;
+    }
+    .confirm-box-sub {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; color: var(--muted);
+      letter-spacing: .5px; line-height: 1.6; margin-bottom: 24px;
+    }
+    .confirm-box-actions { display: flex; gap: 10px; justify-content: center; }
+    .confirm-box-actions button {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 2px;
+      text-transform: uppercase; padding: 10px 20px; border-radius: 2px; cursor: pointer;
+      border: 1px solid; background: none; transition: background .15s;
+    }
+    .confirm-box-btn-cancel { color: var(--muted); border-color: var(--border); }
+    .confirm-box-btn-cancel:hover { color: var(--white); border-color: var(--muted); }
+    .confirm-box-btn-ok.red  { color: var(--red);    border-color: rgba(231,76,60,.5); }
+    .confirm-box-btn-ok.red:hover  { background: rgba(231,76,60,.15); }
+    .confirm-box-btn-ok.yellow { color: var(--yellow); border-color: rgba(243,156,18,.5); }
+    .confirm-box-btn-ok.yellow:hover { background: rgba(243,156,18,.12); }
+
     /* ── MÊS NAV ── */
     .month-nav { display: flex; align-items: center; gap: 12px; }
     .month-btn {
@@ -266,6 +312,19 @@
 
   <div id="loadingScreen">Carregando...</div>
 
+  <!-- MODAL DE CONFIRMAÇÃO DE AÇÃO -->
+  <div class="confirm-overlay" id="actionModal">
+    <div class="confirm-box">
+      <div class="confirm-box-icon" id="actionModalIcon"></div>
+      <div class="confirm-box-title" id="actionModalTitle"></div>
+      <div class="confirm-box-sub" id="actionModalSub"></div>
+      <div class="confirm-box-actions">
+        <button class="confirm-box-btn-cancel" onclick="closeActionModal()">Cancelar</button>
+        <button class="confirm-box-btn-ok" id="actionModalBtn" onclick="executeAction()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="accessDenied">
     <div class="icon">🔒</div>
     <h2>Acesso Restrito</h2>
@@ -315,6 +374,7 @@
             <th>Unidade</th>
             <th>Status</th>
             <th>Valor</th>
+            <th id="thAcoes" style="display:none">Ações</th>
           </tr>
         </thead>
         <tbody id="dashTableBody"></tbody>
@@ -457,8 +517,12 @@
       `
       document.getElementById('dashCount').textContent = total
 
+      // Mostra coluna de ações para admin e gerente
+      const canEdit = ['admin', 'gerente'].includes(currentProfile.role)
+      document.getElementById('thAcoes').style.display = canEdit ? '' : 'none'
+
       if (!data.length) {
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Nenhum agendamento neste período.</td></tr>`
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="${canEdit ? 8 : 7}">Nenhum agendamento neste período.</td></tr>`
         return
       }
 
@@ -470,15 +534,35 @@
         const tel      = row.cliente_tel  || ''
         const filial   = FILIAIS[row.filial_id] || `Unidade ${row.filial_id}`
         const badgeCls = `td-badge badge-${row.status}`
+        const isCancelado = row.status === 'cancelado'
+
+        const acoesTd = canEdit ? `
+          <td data-label="Ações">
+            <div class="td-actions">
+              <button
+                class="btn-action cancelar"
+                onclick="promptAcao('cancelar', '${row.id}', '${esc(cliente)}')"
+                ${isCancelado ? 'disabled title="Já cancelado"' : ''}>
+                Cancelar
+              </button>
+              <button
+                class="btn-action apagar"
+                onclick="promptAcao('apagar', '${row.id}', '${esc(cliente)}')">
+                Apagar
+              </button>
+            </div>
+          </td>` : ''
+
         return `
-          <tr>
+          <tr id="row-${row.id}">
             <td data-label="Data"><b>${data_fmt}</b> ${hora_fmt}</td>
             <td data-label="Cliente" class="td-name">${esc(cliente)}${tel ? `<br><span style="color:var(--muted);font-size:11px;font-weight:400">${esc(tel)}</span>` : ''}</td>
             <td data-label="Serviço">${esc(row.servico)}</td>
             <td data-label="Barbeiro">${esc(row.barbeiro)}</td>
             <td data-label="Unidade">${esc(filial)}</td>
-            <td data-label="Status"><span class="${badgeCls}">${row.status}</span></td>
+            <td data-label="Status"><span class="${badgeCls}" id="status-${row.id}">${row.status}</span></td>
             <td data-label="Valor">${esc(row.preco)}</td>
+            ${acoesTd}
           </tr>
         `
       }).join('')
@@ -487,6 +571,95 @@
     function esc(s) {
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     }
+
+    // ── AÇÕES: cancelar / apagar ─────────────────────────────
+    let _pendingAction = null
+
+    window.promptAcao = (tipo, id, clienteNome) => {
+      _pendingAction = { tipo, id }
+      const modal = document.getElementById('actionModal')
+      const icon  = document.getElementById('actionModalIcon')
+      const title = document.getElementById('actionModalTitle')
+      const sub   = document.getElementById('actionModalSub')
+      const btn   = document.getElementById('actionModalBtn')
+
+      if (tipo === 'cancelar') {
+        icon.textContent  = '⚠️'
+        title.textContent = 'Cancelar agendamento'
+        sub.textContent   = `Marcar o agendamento de ${clienteNome} como cancelado? O horário será liberado.`
+        btn.textContent   = 'Sim, cancelar'
+        btn.className     = 'confirm-box-btn-ok yellow'
+      } else {
+        icon.textContent  = '🗑️'
+        title.textContent = 'Apagar agendamento'
+        sub.textContent   = `Apagar definitivamente o agendamento de ${clienteNome}? Esta ação não pode ser desfeita.`
+        btn.textContent   = 'Sim, apagar'
+        btn.className     = 'confirm-box-btn-ok red'
+      }
+      modal.classList.add('open')
+    }
+
+    window.closeActionModal = () => {
+      document.getElementById('actionModal').classList.remove('open')
+      _pendingAction = null
+    }
+
+    window.executeAction = async () => {
+      if (!_pendingAction) return
+      const { tipo, id } = _pendingAction
+      const btn = document.getElementById('actionModalBtn')
+      btn.textContent = 'Aguarde...'
+      btn.disabled    = true
+
+      try {
+        if (tipo === 'cancelar') {
+          const { error } = await supabase
+            .from('agendamentos')
+            .update({ status: 'cancelado' })
+            .eq('id', id)
+          if (error) throw error
+
+          // Atualiza a linha na tela sem recarregar tudo
+          const badge = document.getElementById(`status-${id}`)
+          if (badge) {
+            badge.textContent = 'cancelado'
+            badge.className   = 'td-badge badge-cancelado'
+          }
+          // Desabilita o botão cancelar da linha
+          const row = document.getElementById(`row-${id}`)
+          if (row) {
+            const btnCanc = row.querySelector('.btn-action.cancelar')
+            if (btnCanc) { btnCanc.disabled = true; btnCanc.title = 'Já cancelado' }
+          }
+          // Atualiza stats
+          await loadDash()
+
+        } else {
+          const { error } = await supabase
+            .from('agendamentos')
+            .delete()
+            .eq('id', id)
+          if (error) throw error
+
+          // Remove a linha da tabela
+          const row = document.getElementById(`row-${id}`)
+          if (row) row.remove()
+          // Atualiza stats
+          await loadDash()
+        }
+
+        closeActionModal()
+      } catch (err) {
+        btn.textContent = 'Erro — tente novamente'
+        btn.disabled    = false
+        console.error(err)
+      }
+    }
+
+    // Fecha o modal ao clicar fora
+    document.getElementById('actionModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeActionModal()
+    })
 
     window.dashLogout = async () => {
       await supabase.auth.signOut()

@@ -19,7 +19,7 @@ function isPhone(str) {
 let currentStep    = 0
 let isLoggedIn     = false
 let currentUser    = null
-let sessionLoading = false  // guarda contra dupla chamada
+let sessionLoading = false
 
 const state = {
   filial:   null,
@@ -36,7 +36,6 @@ async function loadSession() {
 }
 
 async function applySession(session) {
-  // Evita chamadas simultâneas (race condition entre loadSession e onAuthStateChange)
   if (sessionLoading) return
   sessionLoading = true
 
@@ -47,7 +46,6 @@ async function applySession(session) {
       .eq('id', session.user.id)
       .single()
 
-    // Fallback para metadata do auth caso o trigger ainda não tenha rodado
     const meta = session.user.user_metadata || {}
 
     currentUser = {
@@ -67,6 +65,7 @@ function updateNavLoginBtns() {
   const dashRoles = ['admin', 'gerente', 'barbeiro']
   const showDash  = isLoggedIn && dashRoles.includes(currentUser?.role)
 
+  // ── nav desktop ──
   document.querySelectorAll('.nav-login-btn').forEach(btn => {
     if (isLoggedIn && currentUser) {
       btn.textContent = currentUser.nome.split(' ')[0]
@@ -80,10 +79,29 @@ function updateNavLoginBtns() {
   document.querySelectorAll('.nav-dash-btn').forEach(link => {
     link.style.display = showDash ? 'inline-block' : 'none'
   })
+
+  // ── menu mobile ──
+  // expõe estado pro script inline do index.html
+  window._navIsLoggedIn = isLoggedIn
+
+  const mobileLoginLabel = document.getElementById('mobileLoginLabel')
+  const mobileLoginItem  = document.getElementById('mobileLoginItem')
+  const mobileDashItem   = document.getElementById('mobileDashItem')
+
+  if (mobileLoginLabel) {
+    mobileLoginLabel.textContent = isLoggedIn && currentUser
+      ? currentUser.nome.split(' ')[0]
+      : 'Login'
+  }
+  if (mobileLoginItem) {
+    mobileLoginItem.classList.toggle('active-user', isLoggedIn)
+  }
+  if (mobileDashItem) {
+    mobileDashItem.style.display = showDash ? 'flex' : 'none'
+  }
 }
 
 // ─── AUTH: registro ──────────────────────────────────────
-// Retorna { needsConfirm: true } quando precisa confirmar email
 async function handleRegister(nome, email, telefone, senha) {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -97,7 +115,6 @@ async function handleRegister(nome, email, telefone, senha) {
     await applySession(data.session)
     return { needsConfirm: false }
   } else {
-    // Sem sessão — Supabase está com confirmação de email ativa
     return { needsConfirm: true }
   }
 }
@@ -133,7 +150,6 @@ async function handleLogout() {
   currentUser = null
   updateNavLoginBtns()
 
-  // Animação: fade out → vai pro step 0 → fade in
   const app = document.getElementById('app')
   app.style.transition = 'opacity 0.4s ease'
   app.style.opacity = '0'
@@ -142,7 +158,6 @@ async function handleLogout() {
     const confirmSection = document.getElementById('confirmSection')
     if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
     Object.assign(state, { filial: null, barbeiro: null, servico: null, dia: null, horario: null })
-    // Força step 0 sem animação interna
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'))
     document.getElementById('step-0').classList.add('active')
     currentStep = 0
@@ -253,7 +268,6 @@ window.submitLogin = async () => {
       const result = await handleRegister(nome, email, telefone, senha)
 
       if (result.needsConfirm) {
-        // Mostra mensagem de sucesso em verde e não fecha o modal
         showModalMessage('Conta criada! Verifique seu e-mail e clique no link de confirmação para ativar.', 'success')
         btn.textContent = originalText
         btn.disabled    = false
@@ -279,7 +293,6 @@ window.submitLogin = async () => {
   } catch (err) {
     showModalMessage(err.message || 'Erro inesperado. Tente novamente.')
   } finally {
-    // Sempre reativa o botão, independente do resultado
     btn.disabled    = false
     btn.textContent = originalText
   }
@@ -292,10 +305,8 @@ function applyPhoneMask(input) {
   input.addEventListener('input', () => {
     let v = input.value.replace(/\D/g, '').slice(0, 11)
     if (v.length <= 10) {
-      // Fixo: (11) 1234-5678
       v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
     } else {
-      // Celular: (11) 91234-5678
       v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
     }
     input.value = v.replace(/-$/, '')
@@ -428,7 +439,6 @@ window.saveProfile = async () => {
   btn.disabled    = true
 
   try {
-    // Atualiza o perfil no banco
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ nome, telefone: tel })
@@ -436,13 +446,11 @@ window.saveProfile = async () => {
 
     if (profileError) throw new Error(profileError.message)
 
-    // Atualiza senha se informada
     if (senha) {
       const { error: passError } = await supabase.auth.updateUser({ password: senha })
       if (passError) throw new Error(passError.message)
     }
 
-    // Atualiza estado local
     currentUser.nome     = nome
     currentUser.telefone = tel
     updateNavLoginBtns()
@@ -458,7 +466,6 @@ window.saveProfile = async () => {
   }
 }
 
-
 // ─── NAVEGAÇÃO ───────────────────────────────────────────
 function goToStep(n) {
   if (n === currentStep) return
@@ -470,6 +477,8 @@ function goToStep(n) {
   to.scrollTop = 0
   window.scrollTo(0, 0)
   currentStep = n
+  // fecha o menu mobile ao trocar de step
+  if (window.closeMobileMenu) window.closeMobileMenu()
 }
 
 // ─── STEP 1: FILIAIS ─────────────────────────────────────
@@ -767,17 +776,14 @@ function renderDias() {
 
 const HORARIOS = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00']
 
-// Converte label "Seg 12/Mai" + horario "09:00" → ISO datetime string
 function labelParaISO(label, horario) {
   const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
-  // label ex: "Seg 12/Mai"
   const partes = label.split(' ')[1].split('/')
   const dia    = parseInt(partes[0])
   const mes    = meses[partes[1]]
   const ano    = new Date().getFullYear()
   const [h, m] = horario.split(':').map(Number)
   const d = new Date(ano, mes, dia, h, m)
-  // Ajusta virada de ano: se data ficou no passado > 6 meses, é ano que vem
   if (d < new Date() && (new Date() - d) > 180 * 864e5) d.setFullYear(ano + 1)
   return d.toISOString()
 }
@@ -790,7 +796,6 @@ window.selecionarDia = async (i, label) => {
   state.diaIdx = i
   state.horario = null
 
-  // Mostra loading nos horários enquanto busca
   const timesGrid = document.getElementById('timesGrid')
   const availText = document.getElementById('availText')
   const availBar  = document.getElementById('availBar')
@@ -805,7 +810,6 @@ async function renderHorarios(label) {
   const timesGrid = document.getElementById('timesGrid')
   const availText = document.getElementById('availText')
 
-  // Busca horários já ocupados no banco para esse barbeiro+dia
   let ocupados = new Set()
   try {
     const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
@@ -829,7 +833,7 @@ async function renderHorarios(label) {
       const h = new Date(row.horario)
       ocupados.add(`${String(h.getHours()).padStart(2,'0')}:${String(h.getMinutes()).padStart(2,'0')}`)
     })
-  } catch (_) { /* falha silenciosa — mostra tudo disponível */ }
+  } catch (_) {}
 
   const disponiveis = HORARIOS.filter(h => !ocupados.has(h)).length
   if (availText) availText.textContent = `${disponiveis} horário${disponiveis !== 1 ? 's' : ''} disponível${disponiveis !== 1 ? 'is' : ''}`
@@ -899,7 +903,6 @@ window.confirmarAgendamento = async () => {
     }
     goToStep(4)
 
-    // — WhatsApp: envia msg de confirmação pro número da unidade
     const wap = state.filial.whatsapp
     if (wap) {
       const msg = [
@@ -956,7 +959,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
   })
 
-  // Máscara de telefone em todos os campos de tel
   ;['loginTel', 'profileTel'].forEach(id => {
     const el = document.getElementById(id)
     if (el) applyPhoneMask(el)
@@ -968,7 +970,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('back3').addEventListener('click',      () => goToStep(2))
   document.getElementById('btnReset').addEventListener('click',   resetFlow)
 
-  // Swipe para voltar
   let _tx = null, _ty = null
   document.addEventListener('touchstart', e => {
     if (e.target.closest('.profile-photos') || e.target.closest('.days-strip')) { _tx = null; return }

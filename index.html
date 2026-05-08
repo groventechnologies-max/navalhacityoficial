@@ -49,10 +49,13 @@
             <div class="nav-brand">Navalha<span>City</span></div>
           </div>
           <button class="nav-login-btn">Login</button>
-          <a href="/dashboard.html" class="nav-dash-btn" style="display:none">Dashboard</a>
+          <a href="/dashboard" class="nav-dash-btn" style="display:none">Dashboard</a>
           <a href="https://www.instagram.com/barbearia_navalhacity?igsh=MTUyaHpjaTg2b2lmdw==" target="_blank" rel="noopener" class="nav-instagram" aria-label="Instagram">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>
           </a>
+          <button class="nav-hamburger" aria-label="Menu" onclick="toggleMobileMenu(this)">
+            <span></span><span></span><span></span>
+          </button>
         </div>
       </nav>
       <div class="step-content">
@@ -82,10 +85,13 @@
             <div class="nav-brand">Navalha<span>City</span></div>
           </div>
           <button class="nav-login-btn">Login</button>
-          <a href="/dashboard.html" class="nav-dash-btn" style="display:none">Dashboard</a>
+          <a href="/dashboard" class="nav-dash-btn" style="display:none">Dashboard</a>
           <a href="https://www.instagram.com/barbearia_navalhacity?igsh=MTUyaHpjaTg2b2lmdw==" target="_blank" rel="noopener" class="nav-instagram" aria-label="Instagram">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>
           </a>
+          <button class="nav-hamburger" aria-label="Menu" onclick="toggleMobileMenu(this)">
+            <span></span><span></span><span></span>
+          </button>
         </div>
       </nav>
       <div class="step-content" id="profileContent"></div>
@@ -107,10 +113,13 @@
             <div class="nav-brand">Navalha<span>City</span></div>
           </div>
           <button class="nav-login-btn">Login</button>
-          <a href="/dashboard.html" class="nav-dash-btn" style="display:none">Dashboard</a>
+          <a href="/dashboard" class="nav-dash-btn" style="display:none">Dashboard</a>
           <a href="https://www.instagram.com/barbearia_navalhacity?igsh=MTUyaHpjaTg2b2lmdw==" target="_blank" rel="noopener" class="nav-instagram" aria-label="Instagram">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>
           </a>
+          <button class="nav-hamburger" aria-label="Menu" onclick="toggleMobileMenu(this)">
+            <span></span><span></span><span></span>
+          </button>
         </div>
       </nav>
       <div class="step-content" id="scheduleContent"></div>
@@ -126,7 +135,10 @@
             <div class="nav-brand">Navalha<span>City</span></div>
           </div>
           <button class="nav-login-btn">Login</button>
-          <a href="/dashboard.html" class="nav-dash-btn" style="display:none">Dashboard</a>
+          <a href="/dashboard" class="nav-dash-btn" style="display:none">Dashboard</a>
+          <button class="nav-hamburger" aria-label="Menu" onclick="toggleMobileMenu(this)">
+            <span></span><span></span><span></span>
+          </button>
         </div>
       </nav>
       <div class="step-content center-content">
@@ -139,6 +151,25 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- MENU MOBILE DROPDOWN (único, compartilhado) -->
+  <div class="nav-mobile-menu" id="mobileMenu">
+    <!-- item de login/perfil — atualizado pelo JS -->
+    <button class="nav-mobile-item" id="mobileLoginItem" onclick="onMobileLoginClick()">
+      <svg class="nav-mobile-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span id="mobileLoginLabel">Login</span>
+    </button>
+    <!-- dashboard — oculto por padrão, mostrado pelo JS -->
+    <a href="/dashboard" class="nav-mobile-item" id="mobileDashItem" style="display:none">
+      <svg class="nav-mobile-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <!-- instagram -->
+    <a href="https://www.instagram.com/barbearia_navalhacity?igsh=MTUyaHpjaTg2b2lmdw==" target="_blank" rel="noopener" class="nav-mobile-item" onclick="closeMobileMenu()">
+      <svg class="nav-mobile-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>
+      Instagram
+    </a>
   </div>
 
   <!-- MODAL DE LOGIN -->
@@ -237,5 +268,65 @@
   </div>
 
   <script type="module" src="/src/main.js"></script>
+
+  <script>
+    // ─── HAMBURGUER MOBILE ───────────────────────────────
+    let _activeHamburger = null
+
+    function toggleMobileMenu(btn) {
+      const menu = document.getElementById('mobileMenu')
+      const isOpen = menu.classList.contains('open')
+
+      // fecha qualquer hamburguer aberto
+      if (_activeHamburger && _activeHamburger !== btn) {
+        _activeHamburger.classList.remove('open')
+      }
+
+      if (isOpen && _activeHamburger === btn) {
+        menu.classList.remove('open')
+        btn.classList.remove('open')
+        _activeHamburger = null
+        // desacopla o menu do nav
+        document.body.appendChild(menu)
+      } else {
+        // encaixa o menu logo abaixo do step-nav atual
+        const nav = btn.closest('.step-nav')
+        nav.appendChild(menu)
+        // força reflow para a transição funcionar
+        menu.offsetHeight
+        menu.classList.add('open')
+        btn.classList.add('open')
+        _activeHamburger = btn
+      }
+    }
+
+    window.closeMobileMenu = function() {
+      const menu = document.getElementById('mobileMenu')
+      menu.classList.remove('open')
+      if (_activeHamburger) {
+        _activeHamburger.classList.remove('open')
+        _activeHamburger = null
+      }
+      document.body.appendChild(menu)
+    }
+
+    // fecha ao clicar fora
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.nav-hamburger') && !e.target.closest('#mobileMenu')) {
+        closeMobileMenu()
+      }
+    })
+
+    // ação do item login/perfil no menu mobile
+    window.onMobileLoginClick = function() {
+      closeMobileMenu()
+      // isLoggedIn e openProfileModal/openLoginModal vêm do main.js (módulo global via window)
+      if (window._navIsLoggedIn) {
+        window.openProfileModal()
+      } else {
+        window.openLoginModal()
+      }
+    }
+  </script>
 </body>
 </html>

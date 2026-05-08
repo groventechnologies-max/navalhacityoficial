@@ -132,8 +132,22 @@ async function handleLogout() {
   isLoggedIn  = false
   currentUser = null
   updateNavLoginBtns()
-  const confirmSection = document.getElementById('confirmSection')
-  if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
+
+  // Animação: fade out → vai pro step 0 → fade in
+  const app = document.getElementById('app')
+  app.style.transition = 'opacity 0.4s ease'
+  app.style.opacity = '0'
+  setTimeout(() => {
+    closeProfileModal()
+    const confirmSection = document.getElementById('confirmSection')
+    if (confirmSection) confirmSection.innerHTML = renderConfirmSection()
+    Object.assign(state, { filial: null, barbeiro: null, servico: null, dia: null, horario: null })
+    // Força step 0 sem animação interna
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'))
+    document.getElementById('step-0').classList.add('active')
+    currentStep = 0
+    app.style.opacity = '1'
+  }, 400)
 }
 
 // ─── MODAL DE LOGIN ──────────────────────────────────────

@@ -878,14 +878,16 @@ window.confirmarAgendamento = async () => {
     const { data: { user } } = await supabase.auth.getUser()
 
     const { error } = await supabase.from('agendamentos').insert({
-      cliente_id:  user.id,
-      filial_id:   state.filial.id,
-      barbeiro:    state.barbeiro.nome,
-      servico:     state.servico.nome,
-      preco:       state.servico.preco,
-      horario:     labelParaISO(state.dia, state.horario),
-      observacoes: document.getElementById('clientObs')?.value.trim() || null,
-      status:      'confirmado',
+      cliente_id:   user.id,
+      cliente_nome: nome,
+      cliente_tel:  tel,
+      filial_id:    state.filial.id,
+      barbeiro:     state.barbeiro.nome,
+      servico:      state.servico.nome,
+      preco:        state.servico.preco,
+      horario:      labelParaISO(state.dia, state.horario),
+      observacoes:  document.getElementById('clientObs')?.value.trim() || null,
+      status:       'confirmado',
     })
 
     if (error) throw new Error(error.message)

@@ -418,7 +418,7 @@
 
       let query = supabase
         .from('agendamentos')
-        .select('id, horario, servico, barbeiro, preco, status, filial_id, observacoes, profiles(nome, telefone)')
+        .select('id, horario, servico, barbeiro, preco, status, filial_id, observacoes, cliente_nome, cliente_tel')
         .gte('horario', inicio)
         .lte('horario', fim)
         .order('horario', { ascending: true })
@@ -466,8 +466,8 @@
         const d        = new Date(row.horario)
         const data_fmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`
         const hora_fmt = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
-        const cliente  = row.profiles?.nome || '—'
-        const tel      = row.profiles?.telefone || ''
+        const cliente  = row.cliente_nome || '—'
+        const tel      = row.cliente_tel  || ''
         const filial   = FILIAIS[row.filial_id] || `Unidade ${row.filial_id}`
         const badgeCls = `td-badge badge-${row.status}`
         return `

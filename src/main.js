@@ -40,6 +40,27 @@ function revealStagger(selector, baseDelay = 70, variant = '', root = document) 
   root.querySelectorAll(selector).forEach((el, i) => reveal(el, i * baseDelay, variant))
 }
 
+// Marca elementos como reveal (opacity 0) SEM disparar a animação ainda.
+// Útil quando precisamos esconder itens antes de uma transição de curtain.
+function markRevealStagger(selector, baseDelay = 70, variant = '', root = document) {
+  root.querySelectorAll(selector).forEach((el, i) => {
+    if (el.classList.contains('reveal')) return
+    el.classList.add('reveal')
+    if (variant) el.classList.add(variant)
+    el.style.setProperty('--reveal-delay', `${i * baseDelay}ms`)
+  })
+}
+
+// Dispara a animação de reveal (adiciona .revealed via IO).
+function commitReveal(selector, root = document) {
+  root.querySelectorAll(selector).forEach(el => {
+    if (el.classList.contains('reveal') && !el.classList.contains('revealed')) {
+      if (_revealIO) _revealIO.observe(el)
+      else el.classList.add('revealed')
+    }
+  })
+}
+
 // ─── ANIMAÇÕES: RIPPLE EFFECT ────────────────────────────
 function attachGlobalRipple() {
   const SELECTOR = '.btn-primary, .btn-confirm, .btn-select, .btn-login-wall, .nav-login-btn, .btn-back, .filial-header'
@@ -87,6 +108,280 @@ function bindMagnetic(btn, strength) {
   btn.addEventListener('pointerleave', () => {
     btn.style.transform = ''
   })
+}
+
+// ─── ANIMAÇÕES: WAIT HELPER ──────────────────────────────
+function wait(ms) { return new Promise(r => setTimeout(r, ms)) }
+function reducedMotion() { return window.matchMedia('(prefers-reduced-motion: reduce)').matches }
+function isTouch() { return window.matchMedia('(pointer: coarse)').matches }
+
+// ─── ANIMAÇÕES: TEXT SCRAMBLE ────────────────────────────
+class TextScramble {
+  constructor(el) {
+    this.el = el
+    this.chars = '!<>-_\\/[]{}—=+*^?#________'
+    this.update = this.update.bind(this)
+  }
+  setText(newText) {
+    const oldText = this.el.innerText
+    const length = Math.max(oldText.length, newText.length)
+    const promise = new Promise(resolve => this.resolve = resolve)
+    this.queue = []
+    for (let i = 0; i < length; i++) {
+      const from = oldText[i] || ''
+      const to = newText[i] || ''
+      const start = Math.floor(Math.random() * 22)
+      const end = start + Math.floor(Math.random() * 22)
+      this.queue.push({ from, to, start, end })
+    }
+    cancelAnimationFrame(this.frameRequest)
+    this.frame = 0
+    this.update()
+    return promise
+  }
+  update() {
+    let output = ''
+    let complete = 0
+    for (let i = 0, n = this.queue.length; i < n; i++) {
+      let { from, to, start, end, char } = this.queue[i]
+      if (this.frame >= end) {
+        complete++
+        output += to
+      } else if (this.frame >= start) {
+        if (!char || Math.random() < 0.28) {
+          char = this.chars[Math.floor(Math.random() * this.chars.length)]
+          this.queue[i].char = char
+        }
+        output += `<span class="scramble-dud">${char}</span>`
+      } else {
+        output += from
+      }
+    }
+    this.el.innerHTML = output
+    if (complete === this.queue.length) {
+      this.resolve()
+    } else {
+      this.frameRequest = requestAnimationFrame(this.update)
+      this.frame++
+    }
+  }
+}
+
+async function scrambleHeroTitle() {
+  const title = document.querySelector('.hero-title')
+  if (!title || title._scrambled) return
+  title._scrambled = true
+  if (reducedMotion()) {
+    title.style.visibility = 'visible'
+    return
+  }
+  title.style.visibility = 'visible'
+  const original = title.innerHTML
+  const finalText = title.textContent
+  const fx = new TextScramble(title)
+  await fx.setText(finalText)
+  title.innerHTML = original
+}
+
+// ─── ANIMAÇÕES: LETTER-BY-LETTER REVEAL ──────────────────
+function splitLetters(el) {
+  if (!el || el.dataset.split) return
+  const html = el.innerHTML
+  const segments = html.split(/(<br\s*\/?>)/i)
+  el.innerHTML = ''
+  let charIndex = 0
+  segments.forEach(seg => {
+    if (seg.match(/^<br/i)) {
+      el.appendChild(document.createElement('br'))
+    } else {
+      const text = seg.replace(/<[^>]+>/g, '')
+      text.split('').forEach(char => {
+        const span = document.createElement('span')
+        span.className = 'letter-reveal'
+        span.textContent = char === ' ' ? ' ' : char
+        span.style.setProperty('--letter-i', charIndex)
+        el.appendChild(span)
+        charIndex++
+      })
+    }
+  })
+  el.dataset.split = '1'
+}
+
+const _letterIO = ('IntersectionObserver' in window)
+  ? new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('.letter-reveal').forEach(s => s.classList.add('show'))
+          _letterIO.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.25 })
+  : null
+
+function setupLetterReveal(selector, root = document) {
+  if (reducedMotion()) return
+  root.querySelectorAll(selector).forEach(el => {
+    splitLetters(el)
+    if (_letterIO) _letterIO.observe(el)
+    else el.querySelectorAll('.letter-reveal').forEach(s => s.classList.add('show'))
+  })
+}
+
+// ─── ANIMAÇÕES: NUMBER COUNTER ───────────────────────────
+function animateCounter(el, finalValue, suffix, duration = 1700) {
+  const start = performance.now()
+  function tick(now) {
+    const elapsed = now - start
+    const progress = Math.min(elapsed / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3)
+    const current = Math.round(finalValue * eased)
+    el.textContent = current + suffix
+    if (progress < 1) requestAnimationFrame(tick)
+    else el.textContent = finalValue + suffix
+  }
+  requestAnimationFrame(tick)
+}
+
+const _counterIO = ('IntersectionObserver' in window)
+  ? new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !entry.target._counted) {
+          const el = entry.target
+          el._counted = true
+          const m = (el.dataset.original || '').match(/^(\d+)(.*)$/)
+          if (m) animateCounter(el, parseInt(m[1]), m[2])
+          _counterIO.unobserve(el)
+        }
+      })
+    }, { threshold: 0.4 })
+  : null
+
+function setupCounters(root = document) {
+  if (reducedMotion()) return
+  root.querySelectorAll('.stat-num').forEach(el => {
+    if (el.dataset.original) return
+    el.dataset.original = el.textContent
+    const m = el.textContent.match(/^(\d+)(.*)$/)
+    if (m) el.textContent = '0' + m[2]
+    if (_counterIO) _counterIO.observe(el)
+  })
+}
+
+// ─── ANIMAÇÕES: 3D TILT ──────────────────────────────────
+function attachTilt(selector, root = document, maxRotate = 8) {
+  if (isTouch() || reducedMotion()) return
+  root.querySelectorAll(selector).forEach(card => {
+    if (card._tilt) return
+    card._tilt = true
+    card.classList.add('tilt-card')
+    card.addEventListener('pointerenter', () => card.classList.add('tilting'))
+    card.addEventListener('pointermove', (e) => {
+      const r = card.getBoundingClientRect()
+      const dx = (e.clientX - r.left - r.width / 2) / (r.width / 2)
+      const dy = (e.clientY - r.top - r.height / 2) / (r.height / 2)
+      card.style.transform = `perspective(900px) rotateX(${-dy * maxRotate}deg) rotateY(${dx * maxRotate}deg) translateZ(0)`
+    })
+    card.addEventListener('pointerleave', () => {
+      card.classList.remove('tilting')
+      card.style.transform = ''
+    })
+  })
+}
+
+// ─── ANIMAÇÕES: HERO PARALLAX ────────────────────────────
+function attachHeroParallax() {
+  if (isTouch() || reducedMotion()) return
+  const hero = document.querySelector('#step-0 .hero')
+  if (!hero || hero._parallax) return
+  hero._parallax = true
+  const layers = [
+    { sel: '.hero-logo',   factor: 12 },
+    { sel: '.hero-badge',  factor: 8 },
+    { sel: '.hero-title',  factor: -16 },
+    { sel: '.hero-sub',    factor: -10 },
+    { sel: '.hero-cta',    factor: -6 },
+  ].map(l => ({ el: hero.querySelector(l.sel), factor: l.factor })).filter(l => l.el)
+
+  let raf = null
+  let tx = 0, ty = 0
+  hero.addEventListener('pointermove', (e) => {
+    const r = hero.getBoundingClientRect()
+    tx = (e.clientX - r.left - r.width / 2) / r.width
+    ty = (e.clientY - r.top - r.height / 2) / r.height
+    if (!raf) raf = requestAnimationFrame(applyParallax)
+  })
+  hero.addEventListener('pointerleave', () => {
+    tx = 0; ty = 0
+    if (!raf) raf = requestAnimationFrame(applyParallax)
+  })
+  function applyParallax() {
+    layers.forEach(l => {
+      l.el.style.transform = `translate3d(${tx * l.factor}px, ${ty * l.factor}px, 0)`
+    })
+    raf = null
+  }
+}
+
+// ─── ANIMAÇÕES: SMOOTH SCROLL (lerp) ─────────────────────
+function attachSmoothScroll() {
+  if (isTouch() || reducedMotion()) return
+  document.querySelectorAll('.step').forEach(step => {
+    if (step._smoothScroll) return
+    step._smoothScroll = true
+    let target = step.scrollTop
+    let current = step.scrollTop
+    let raf = null
+
+    step.addEventListener('wheel', (e) => {
+      // não interceptar scroll horizontal nem dentro de scrollers internos
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+      if (e.target.closest && e.target.closest('.profile-photos, .days-strip, .portfolio-strip, iframe')) return
+      const max = step.scrollHeight - step.clientHeight
+      if (max <= 0) return
+      e.preventDefault()
+      target = Math.max(0, Math.min(target + e.deltaY, max))
+      if (!raf) raf = requestAnimationFrame(tick)
+    }, { passive: false })
+
+    function tick() {
+      const diff = target - current
+      if (Math.abs(diff) < 0.5) {
+        current = target
+        step.scrollTop = target
+        raf = null
+        return
+      }
+      current += diff * 0.18
+      step.scrollTop = current
+      raf = requestAnimationFrame(tick)
+    }
+
+    // resync se houver scroll programático
+    step._syncScroll = () => { target = step.scrollTop; current = step.scrollTop }
+  })
+}
+
+// ─── ANIMAÇÕES: CURTAIN TRANSITION ───────────────────────
+let _curtainRunning = false
+async function curtainTransition(callback) {
+  const curtain = document.getElementById('curtain')
+  if (!curtain || reducedMotion() || _curtainRunning) {
+    callback()
+    return
+  }
+  _curtainRunning = true
+  curtain.classList.remove('uncover')
+  void curtain.offsetWidth
+  curtain.classList.add('cover')
+  await wait(440) // cobertura (com stagger das 3 panels)
+  callback()
+  await wait(60)
+  curtain.classList.remove('cover')
+  curtain.classList.add('uncover')
+  await wait(440)
+  curtain.classList.remove('uncover')
+  _curtainRunning = false
 }
 
 // ─── STATE ───────────────────────────────────────────────
@@ -592,22 +887,21 @@ function goToStep(n) {
   const from = document.getElementById(`step-${currentStep}`)
   const to   = document.getElementById(`step-${n}`)
   if (!from || !to) return
-  from.classList.remove('active')
-  to.classList.add('active')
-  to.scrollTop = 0
-  window.scrollTo(0, 0)
-  currentStep = n
-  if (window.closeMobileMenu) window.closeMobileMenu()
 
-  // Trigger reveals para itens ainda não animados (caso step 1)
-  if (n === 1) {
-    requestAnimationFrame(() => {
-      const pendentes = document.querySelectorAll('#filiaisList .filial-item:not(.sk-card):not(.reveal)')
-      if (pendentes.length > 0) {
-        revealStagger('#filiaisList .filial-item:not(.sk-card):not(.reveal)', 90)
-      }
-    })
-  }
+  curtainTransition(() => {
+    from.classList.remove('active')
+    to.classList.add('active')
+    to.scrollTop = 0
+    window.scrollTo(0, 0)
+    if (to._syncScroll) to._syncScroll()
+    currentStep = n
+    if (window.closeMobileMenu) window.closeMobileMenu()
+  }).then(() => {
+    // Após curtain terminar, dispara reveals (assim a animação não é engolida pela cortina)
+    if (n === 1) {
+      commitReveal('#filiaisList .filial-item:not(.sk-card)')
+    }
+  })
 }
 
 // ─── STEP 1: FILIAIS ─────────────────────────────────────
@@ -661,8 +955,11 @@ function renderFiliais() {
         </div>
       </div>
     `).join('')
+    // Marca itens como ocultos (opacity 0) sempre — evita flash quando curtain abrir
+    markRevealStagger('#filiaisList .filial-item', 90)
+    // Se o usuário já está no step 1, dispara animação imediatamente
     if (currentStep === 1) {
-      revealStagger('#filiaisList .filial-item', 90)
+      commitReveal('#filiaisList .filial-item')
     }
   }, 600)
 }
@@ -784,6 +1081,10 @@ function renderPerfil() {
   reveal(document.querySelector('#profileContent .barbers-title'), 240)
   revealStagger('#profileContent .barber-card', 80)
   reveal(document.querySelector('#profileContent .profile-desc'), 0, 'reveal-scale')
+
+  // 3D tilt nos barbeiros + counter nas stats
+  attachTilt('#profileContent .barber-card', document, 8)
+  setupCounters(document.getElementById('profileContent'))
 }
 
 window.scrollPhotos = (dir) => {
@@ -880,11 +1181,14 @@ function renderAgendamento() {
 
   // Animações de entrada
   reveal(document.querySelector('#scheduleContent .section-label'), 0)
-  reveal(document.querySelector('#scheduleContent .section-title'), 80)
   revealStagger('#scheduleContent .schedule-context .context-chip', 60)
   revealStagger('#scheduleContent .services-grid .service-item', 60)
   reveal(document.querySelector('#scheduleContent .sched-block:last-of-type'), 0, 'reveal-scale')
   reveal(document.getElementById('confirmSection'), 100, 'reveal-scale')
+
+  // Letter reveal no título "Agendamento" + tilt nos serviços
+  setupLetterReveal('#scheduleContent .section-title')
+  attachTilt('#scheduleContent .service-item', document, 6)
 }
 
 function renderConfirmSection() {
@@ -1246,10 +1550,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderFiliais()
 
-  // ── Animações: hero + ripple + magnetic ──
-  document.querySelector('#step-0 .hero')?.classList.add('hero-anim')
+  // ── Animações: ripple + magnetic + smooth scroll + letter reveal estático ──
   attachGlobalRipple()
   attachMagneticEffect()
+  attachSmoothScroll()
+  setupLetterReveal('#step-1 .section-title')
+
+  // Esconde título da hero até o scramble rodar (evita flash do texto plain)
+  const _heroTitle = document.querySelector('.hero-title')
+  if (_heroTitle) _heroTitle.style.visibility = 'hidden'
+
+  // ── Boot sequence: loading → hero anim → scramble + parallax ──
+  ;(async () => {
+    await wait(2000) // espera animações internas do loading terminarem
+    document.getElementById('loadingScreen')?.classList.add('hide')
+    await wait(450) // espera fade do loading completar
+    const hero = document.querySelector('#step-0 .hero')
+    hero?.classList.add('hero-anim')
+    attachHeroParallax()
+    scrambleHeroTitle() // dispara junto com hero-anim, sem gap visual no título
+  })()
 
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session && !isLoggedIn) {

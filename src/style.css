@@ -1762,19 +1762,16 @@ body {
   transform: scale(1) translate3d(0, 0, 0);
 }
 
-/* Hero load-in: cascateia logo > badge > título > sub > CTA > scroll-hint */
+/* Hero load-in: cascateia logo > badge > sub > CTA > scroll-hint (título usa text scramble via JS) */
 .hero-anim .hero-logo,
 .hero-anim .hero-badge,
-.hero-anim .hero-title,
 .hero-anim .hero-sub,
-.hero-anim .hero-cta,
-.hero-anim .scroll-hint {
+.hero-anim .hero-cta {
   opacity: 0;
   animation: hero-rise 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .hero-anim .hero-logo  { animation-delay: 0.05s; }
 .hero-anim .hero-badge { animation-delay: 0.20s; }
-.hero-anim .hero-title { animation-delay: 0.32s; }
 .hero-anim .hero-sub   { animation-delay: 0.50s; }
 .hero-anim .hero-cta   { animation-delay: 0.65s; }
 .hero-anim .scroll-hint { animation: hero-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.85s forwards, scroll-bounce 2s ease-in-out 1.85s infinite; }
@@ -1849,5 +1846,146 @@ body {
 .btn-select,
 .btn-login-wall {
   transition: background 0.2s, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
+}
+
+/* ─── LOADING SCREEN — logo "desenhando" ─────────────── */
+#loadingScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  transition: opacity 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+              visibility 0.6s;
+}
+#loadingScreen.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.loading-stage {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.loading-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(56px, 12vw, 130px);
+  letter-spacing: 8px;
+  color: white;
+  line-height: 0.9;
+  margin: 0;
+  -webkit-text-stroke: 1.5px white;
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  animation: loading-title-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards,
+             loading-title-fill 0.4s ease 0.85s forwards;
+}
+@keyframes loading-title-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.94); letter-spacing: 18px; }
+  to   { opacity: 1; transform: translateY(0) scale(1);     letter-spacing: 8px; }
+}
+@keyframes loading-title-fill {
+  to {
+    -webkit-text-stroke: 0px white;
+    -webkit-text-fill-color: white;
+  }
+}
+.loading-line {
+  width: 0;
+  height: 1px;
+  background: white;
+  animation: loading-line-draw 0.6s cubic-bezier(0.65, 0, 0.35, 1) 1.05s forwards;
+}
+@keyframes loading-line-draw {
+  to { width: 220px; }
+}
+.loading-tagline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  opacity: 0;
+  animation: loading-fade-in 0.5s ease 1.45s forwards;
+}
+@keyframes loading-fade-in {
+  to { opacity: 1; }
+}
+
+/* ─── CURTAIN WIPE — transição entre steps ───────────── */
+#curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  display: flex;
+}
+#curtain.cover { pointer-events: all; }
+.curtain-panel {
+  flex: 1;
+  background: var(--black);
+  transform: translateY(-101%);
+  will-change: transform;
+  transition: transform 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+}
+#curtain.cover .curtain-panel   { transform: translateY(0); }
+#curtain.uncover .curtain-panel { transform: translateY(101%); }
+
+.curtain-panel:nth-child(1) { transition-delay: 0ms; }
+.curtain-panel:nth-child(2) { transition-delay: 40ms; }
+.curtain-panel:nth-child(3) { transition-delay: 80ms; }
+#curtain.uncover .curtain-panel:nth-child(1) { transition-delay: 80ms; }
+#curtain.uncover .curtain-panel:nth-child(2) { transition-delay: 40ms; }
+#curtain.uncover .curtain-panel:nth-child(3) { transition-delay: 0ms; }
+
+/* ─── LETTER REVEAL — títulos cinematográficos ──────── */
+.letter-reveal {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(18px) rotate(6deg);
+  filter: blur(4px);
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--letter-i, 0) * 35ms);
+  will-change: opacity, transform, filter;
+}
+.letter-reveal.show {
+  opacity: 1;
+  transform: translateY(0) rotate(0);
+  filter: blur(0);
+}
+
+/* ─── TEXT SCRAMBLE — duds ───────────────────────────── */
+.scramble-dud {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ─── 3D TILT — cards com profundidade ───────────────── */
+.tilt-card {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tilt-card.tilting {
+  transition: transform 0.05s linear;
+}
+
+/* prefers-reduced-motion override final */
+@media (prefers-reduced-motion: reduce) {
+  .loading-title,
+  .loading-line,
+  .loading-tagline { animation: none !important; opacity: 1 !important; }
+  .loading-title { -webkit-text-fill-color: white; -webkit-text-stroke: 0; }
+  .loading-line  { width: 220px; }
+  .letter-reveal { opacity: 1 !important; transform: none !important; }
+  .curtain-panel { display: none !important; }
+  .tilt-card { transform: none !important; }
 }
 

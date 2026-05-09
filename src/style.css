@@ -1762,12 +1762,28 @@ body {
   transform: scale(1) translate3d(0, 0, 0);
 }
 
-/* Hero load-in: cascateia logo > badge > sub > CTA > scroll-hint (título usa text scramble via JS) */
+/* Hero load-in: cascateia logo > badge > sub > CTA > scroll-hint (título usa text scramble via JS).
+   IMPORTANTE: estado base dos elementos é INVISÍVEL pra não aparecerem
+   estáticos durante o fade out do loading screen. Só ficam visíveis via:
+   (a) animação .hero-anim que termina opacity 1 (forwards), ou
+   (b) classe .hero-ready que mostra direto (usado quando vem de page transition) */
+.hero .hero-logo,
+.hero .hero-badge,
+.hero .hero-sub,
+.hero .hero-cta,
+.hero .scroll-hint {
+  opacity: 0;
+}
+.hero.hero-ready .hero-logo,
+.hero.hero-ready .hero-badge,
+.hero.hero-ready .hero-sub,
+.hero.hero-ready .hero-cta,
+.hero.hero-ready .scroll-hint { opacity: 1; }
+
 .hero-anim .hero-logo,
 .hero-anim .hero-badge,
 .hero-anim .hero-sub,
 .hero-anim .hero-cta {
-  opacity: 0;
   animation: hero-rise 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .hero-anim .hero-logo  { animation-delay: 0.05s; }

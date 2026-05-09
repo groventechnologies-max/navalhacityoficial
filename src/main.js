@@ -1568,6 +1568,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Rede de segurança: força loading a sair se algo travar ──
   setTimeout(() => {
     document.getElementById('loadingScreen')?.classList.add('hide')
+    const hero = document.querySelector('#step-0 .hero')
+    if (hero && !hero.classList.contains('hero-anim') && !hero.classList.contains('hero-ready')) {
+      hero.classList.add('hero-ready')
+    }
     const t = document.querySelector('.hero-title')
     if (t) t.style.visibility = 'visible'
   }, 5000)
@@ -1582,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (cameFromTransition) {
         document.getElementById('loadingScreen')?.classList.add('hide')
         const hero = document.querySelector('#step-0 .hero')
-        hero?.classList.add('hero-anim')
+        hero?.classList.add('hero-ready') // mostra direto, sem animação de subir
         const t = document.querySelector('.hero-title')
         if (t) t.style.visibility = 'visible'
         try { attachHeroParallax() } catch (e) { console.warn('parallax falhou', e) }
@@ -1602,6 +1606,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {
       console.error('boot animation falhou', e)
       document.getElementById('loadingScreen')?.classList.add('hide')
+      document.querySelector('#step-0 .hero')?.classList.add('hero-ready')
       const t = document.querySelector('.hero-title')
       if (t) t.style.visibility = 'visible'
     }

@@ -112,7 +112,9 @@ function bindMagnetic(btn, strength) {
 
 // ─── ANIMAÇÕES: WAIT HELPER ──────────────────────────────
 function wait(ms) { return new Promise(r => setTimeout(r, ms)) }
-function reducedMotion() { return window.matchMedia('(prefers-reduced-motion: reduce)').matches }
+// Ignoramos prefers-reduced-motion intencionalmente: muitos sistemas (Windows)
+// vêm com a flag ativada por padrão e isso engole TODAS as animações da landing.
+function reducedMotion() { return false }
 // Detecta se o device tem mouse fino. Usa any-pointer para suportar laptops
 // Windows com touchscreen + mouse — pointer:coarse retornaria true falsamente.
 function hasFinePointer() { return window.matchMedia('(any-pointer: fine)').matches }
@@ -1552,11 +1554,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadSession()
 
   renderFiliais()
-
-  // Diagnóstico (some quando os logs forem limpos)
-  console.log('[anim] hasFinePointer:', hasFinePointer(),
-              '| reducedMotion:', reducedMotion(),
-              '| anyPointerCoarse:', window.matchMedia('(any-pointer: coarse)').matches)
 
   // ── Animações: ripple + magnetic + smooth scroll + letter reveal estático ──
   attachGlobalRipple()

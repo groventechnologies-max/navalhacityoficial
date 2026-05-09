@@ -1053,14 +1053,14 @@ function renderPerfil() {
       ${f.barbeiros.map((b, i) => `
         <div class="barber-card" id="barber-${i}" onclick="selecionarBarbeiro(${i})">
           <div class="selected-badge">Selecionado</div>
-          ${b.badge ? `<div class="barber-badge">${b.badge}</div>` : ''}
+          ${b.badge ? `<div class="barber-badge">${escapeHTML(b.badge)}</div>` : ''}
           <div class="barber-photo">
-            ${b.foto ? `<img src="${b.foto}" alt="${b.nome}">` : (b.emoji || '✂️')}
+            ${b.foto ? `<img src="${escapeHTML(b.foto)}" alt="${escapeHTML(b.nome)}">` : (b.emoji || '✂️')}
           </div>
           <div class="barber-info">
-            <div class="barber-name">${b.nome}</div>
-            <div class="barber-specialty">${b.especialidade}</div>
-            <div class="barber-rating">${b.nota} · Disponível</div>
+            <div class="barber-name">${escapeHTML(b.nome)}</div>
+            <div class="barber-specialty">${escapeHTML(b.especialidade)}</div>
+            <div class="barber-rating">${escapeHTML(b.nota || '')} · Disponível</div>
           </div>
         </div>
       `).join('')}

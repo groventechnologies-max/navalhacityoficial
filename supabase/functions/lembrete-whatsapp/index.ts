@@ -20,7 +20,15 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  // Hardening: exige header Authorization (cron job passa ANON_KEY ou um shared secret).
+  // Sem isso, a função fica acessível por qualquer um que descubra a URL e dispara WhatsApps em massa.
+  const authHeader = req.headers.get('authorization') ?? ''
+  const expected   = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+  if (!authHeader.startsWith('Bearer ') || !expected || authHeader.slice(7) !== expected) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
   const agora   = new Date()
   const em50min = new Date(agora.getTime() + 50 * 60_000)
   const em70min = new Date(agora.getTime() + 70 * 60_000)
@@ -37,7 +45,7 @@ Deno.serve(async (_req) => {
   }
 
   const zapiUrl = Deno.env.get('ZAPI_URL')
-  const resultados: { tel: string; status: string; erro?: string }[] = []
+  let enviados = 0, falhas = 0, semApi = 0
 
   for (const ag of agendamentos ?? []) {
     const rawTel = (ag.cliente_tel ?? '').replace(/\D/g, '')
@@ -46,10 +54,13 @@ Deno.serve(async (_req) => {
     const d    = new Date(ag.horario)
     const hora = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 
+    // Sanitiza nome pra não quebrar formatação WhatsApp (caracteres * _ ~ `)
+    const nomeSeguro = String(ag.cliente_nome ?? '').replace(/[*_~`]/g, '')
+
     const msg = [
       `⏰ *Lembrete — Navalha City*`,
       ``,
-      `Olá, ${ag.cliente_nome}! Seu agendamento é em aproximadamente 1 hora.`,
+      `Olá, ${nomeSeguro}! Seu agendamento é em aproximadamente 1 hora.`,
       ``,
       `💈 *Barbeiro:* ${ag.barbeiro}`,
       `✂️ *Serviço:* ${ag.servico}`,
@@ -60,10 +71,7 @@ Deno.serve(async (_req) => {
 
     const phone = `55${rawTel}`
 
-    if (!zapiUrl) {
-      resultados.push({ tel: phone, status: 'sem_api' })
-      continue
-    }
+    if (!zapiUrl) { semApi++; continue }
 
     try {
       const resp = await fetch(`${zapiUrl}/send-text`, {
@@ -71,16 +79,19 @@ Deno.serve(async (_req) => {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ phone, message: msg }),
       })
-      resultados.push({ tel: phone, status: resp.ok ? 'ok' : `http_${resp.status}` })
-    } catch (e) {
-      resultados.push({ tel: phone, status: 'falha', erro: String(e) })
+      if (resp.ok) enviados++; else falhas++
+    } catch (_e) {
+      falhas++
     }
   }
 
+  // Não retorna telefones nem nomes na response (response é logada por padrão).
   return Response.json({
-    ok:      true,
-    janela:  `${em50min.toISOString()} → ${em70min.toISOString()}`,
-    total:   agendamentos?.length ?? 0,
-    enviados: resultados,
+    ok:        true,
+    janela:    `${em50min.toISOString()} → ${em70min.toISOString()}`,
+    total:     agendamentos?.length ?? 0,
+    enviados,
+    falhas,
+    sem_api:   semApi,
   })
 })

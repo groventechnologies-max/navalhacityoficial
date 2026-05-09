@@ -876,9 +876,10 @@
       badge.className   = `dash-role-badge ${profile.role}`
 
       // Menu mobile: nome + role + botão sair
+      const _escEarly = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
       document.getElementById('dashMobileUser').innerHTML = `
-        <div style="color:var(--white);font-size:15px;margin-bottom:4px">${profile.nome.split(' ')[0]}</div>
-        <div style="margin-bottom:16px">${profile.role}</div>
+        <div style="color:var(--white);font-size:15px;margin-bottom:4px">${_escEarly(profile.nome.split(' ')[0])}</div>
+        <div style="margin-bottom:16px">${_escEarly(profile.role)}</div>
         <button onclick="dashLogout()" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:8px 16px;border-radius:2px;cursor:pointer">Sair da conta</button>
       `
 
@@ -1103,7 +1104,14 @@
     }
 
     function esc(s) {
-      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      // Escapa também aspas — necessário pois esc() é usado em atributos onclick='${esc(...)}'
+      // Sem isso, cliente pode injetar `' onclick='alert(1)` no campo cliente_nome do agendamento
+      return String(s || '')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;')
     }
 
     // ── AÇÕES: cancelar / apagar ─────────────────────────────

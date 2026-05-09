@@ -1572,9 +1572,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (t) t.style.visibility = 'visible'
   }, 5000)
 
+  // Se a página está sendo aberta vinda de uma transição (ex: dashboard → /),
+  // pula o loading screen e o scramble pra não duplicar com o curtain.
+  const cameFromTransition = !!document.getElementById('_curtainEarlyCover')
+
   // ── Boot sequence: loading → hero anim → scramble + parallax ──
   ;(async () => {
     try {
+      if (cameFromTransition) {
+        document.getElementById('loadingScreen')?.classList.add('hide')
+        const hero = document.querySelector('#step-0 .hero')
+        hero?.classList.add('hero-anim')
+        const t = document.querySelector('.hero-title')
+        if (t) t.style.visibility = 'visible'
+        try { attachHeroParallax() } catch (e) { console.warn('parallax falhou', e) }
+        return
+      }
       await wait(2000) // espera animações internas do loading terminarem
       document.getElementById('loadingScreen')?.classList.add('hide')
       await wait(450) // espera fade do loading completar

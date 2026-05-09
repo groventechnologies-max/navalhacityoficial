@@ -316,9 +316,60 @@
       .form-row { grid-template-columns: 1fr; }
       .modal-box { padding: 24px 18px; }
     }
+
+    /* ── PAGE TRANSITION CURTAIN ── */
+    #curtain {
+      position: fixed; inset: 0; z-index: 9000; pointer-events: none; overflow: hidden;
+    }
+    #curtain.cover, #curtain.uncover { pointer-events: all; }
+    .curtain-half {
+      position: absolute; left: 0; right: 0; height: 51%;
+      background: var(--black);
+      will-change: transform;
+      transition: transform 0.55s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+    .curtain-top    { top: 0;    transform: translateY(-101%); }
+    .curtain-bottom { bottom: 0; transform: translateY(101%);  }
+    #curtain.cover .curtain-half { transform: translateY(0); }
+    #curtain.uncover .curtain-top    { transform: translateY(-101%); }
+    #curtain.uncover .curtain-bottom { transform: translateY(101%);  }
+    .curtain-mark {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; z-index: 1; pointer-events: none; opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #curtain.cover .curtain-mark { opacity: 1; transition: opacity 0.35s ease 0.25s; }
+    .curtain-mark-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(36px, 6vw, 64px);
+      letter-spacing: 6px; color: var(--white); line-height: 1;
+      transform: translateY(12px);
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .curtain-mark-text span { color: var(--white); opacity: 0.45; }
+    .curtain-mark-line {
+      display: block; width: 0; height: 1px;
+      background: var(--white); opacity: 0.6;
+      transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+    }
+    #curtain.cover .curtain-mark-text { transform: translateY(0); }
+    #curtain.cover .curtain-mark-line { width: 140px; }
   </style>
 </head>
 <body>
+
+  <!-- CURTAIN para transição de página -->
+  <div id="curtain">
+    <div class="curtain-half curtain-top"></div>
+    <div class="curtain-half curtain-bottom"></div>
+    <div class="curtain-mark">
+      <span class="curtain-mark-text">Navalha<span>City</span></span>
+      <span class="curtain-mark-line"></span>
+    </div>
+  </div>
+
+  <script src="/src/page-transition.js"></script>
 
   <!-- NAV -->
   <nav class="dash-nav">
@@ -812,7 +863,8 @@
     // ─── LOGOUT ───────────────────────────────────────────
     window.doLogout = async function() {
       await supabase.auth.signOut()
-      window.location.href = '/'
+      if (window.pageTransitionTo) window.pageTransitionTo('/')
+      else window.location.href = '/'
     }
 
     // ─── HELPERS ──────────────────────────────────────────

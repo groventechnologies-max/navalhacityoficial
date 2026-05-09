@@ -15,6 +15,35 @@ function isPhone(str) {
   return !/\S+@\S+\.\S+/.test(str)
 }
 
+// ─── STATUS DA FILIAL (aberto/fechado) ───────────────────
+function getFilialStatus(filial, now = new Date()) {
+  const horario = filial.horario || { abre: 9, fecha: 19 }
+  const dia    = now.getDay()           // 0=dom, 6=sab
+  const hora   = now.getHours() + now.getMinutes() / 60
+  const fechadoDom = dia === 0          // assume fechado domingo por default
+  const aberto = !fechadoDom && hora >= horario.abre && hora < horario.fecha
+  const pad = (n) => String(n).padStart(2, '0')
+  if (aberto) {
+    return {
+      aberto: true,
+      label: 'Aberto',
+      subLabel: `fecha às ${pad(horario.fecha)}h`,
+    }
+  }
+  // Calcula próximo dia/hora de abertura
+  let proxDia = dia
+  if (hora >= horario.fecha) proxDia = (dia + 1) % 7
+  if (proxDia === 0) proxDia = 1 // pula domingo
+  const diasNomes = ['domingo', 'amanhã', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+  const isHoje    = (proxDia === dia && hora < horario.abre)
+  const labelDia  = isHoje ? `hoje` : (proxDia === ((dia + 1) % 7) ? 'amanhã' : diasNomes[proxDia])
+  return {
+    aberto: false,
+    label: 'Fechado',
+    subLabel: `abre ${labelDia} às ${pad(horario.abre)}h`,
+  }
+}
+
 // ─── ANIMAÇÕES: REVEAL ON SCROLL ─────────────────────────
 const _revealIO = ('IntersectionObserver' in window)
   ? new IntersectionObserver((entries) => {
@@ -924,7 +953,10 @@ function renderFiliais() {
   `).join('')
 
   setTimeout(() => {
-    el.innerHTML = DATA.filiais.map(f => `
+    el.innerHTML = DATA.filiais.map(f => {
+      const status = getFilialStatus(f)
+      const telDigits = (f.telefone || '').replace(/\D/g, '')
+      return `
       <div class="filial-item" id="filial-${f.id}">
         <div class="filial-header" onclick="toggleFilial(${f.id})">
           <div class="filial-left">
@@ -934,6 +966,10 @@ function renderFiliais() {
               <p>${f.regiao}</p>
             </div>
           </div>
+          <div class="filial-status">
+            <span class="filial-status-dot ${status.aberto ? 'open' : 'closed'}"></span>
+            <span class="filial-status-text">${status.label}</span>
+          </div>
           <div class="filial-arrow">▼</div>
         </div>
         <div class="filial-body">
@@ -941,6 +977,13 @@ function renderFiliais() {
             <div class="filial-address">
               <h4>Endereço</h4>
               <p>${f.endereco.replace(/\n/g, '<br>')}</p>
+              <div class="filial-meta">
+                <span class="meta-line">${status.aberto ? 'Aberto agora' : 'Fechado'} · ${status.subLabel}</span>
+              </div>
+              <div class="filial-actions">
+                ${telDigits ? `<a class="btn-call" href="tel:+${telDigits}">📞 Ligar</a>` : ''}
+                ${f.whatsapp ? `<a class="btn-whats" href="https://wa.me/${f.whatsapp}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+              </div>
               <div class="filial-tags">
                 ${f.tags.map(t => `<span class="tag">${t}</span>`).join('')}
               </div>
@@ -955,7 +998,7 @@ function renderFiliais() {
           </div>
         </div>
       </div>
-    `).join('')
+    `}).join('')
     // Marca itens como ocultos (opacity 0) sempre — evita flash quando curtain abrir
     markRevealStagger('#filiaisList .filial-item', 90)
     // Se o usuário já está no step 1, dispara animação imediatamente

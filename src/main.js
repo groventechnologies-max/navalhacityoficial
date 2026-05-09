@@ -453,6 +453,7 @@ function updateNavLoginBtns() {
   const mobileLoginLabel = document.getElementById('mobileLoginLabel')
   const mobileLoginItem  = document.getElementById('mobileLoginItem')
   const mobileDashItem   = document.getElementById('mobileDashItem')
+  const mobileAgendItem  = document.getElementById('mobileAgendItem')
 
   if (mobileLoginLabel) {
     mobileLoginLabel.textContent = isLoggedIn && currentUser
@@ -464,6 +465,9 @@ function updateNavLoginBtns() {
   }
   if (mobileDashItem) {
     mobileDashItem.style.display = showDash ? 'flex' : 'none'
+  }
+  if (mobileAgendItem) {
+    mobileAgendItem.style.display = isLoggedIn ? 'flex' : 'none'
   }
 }
 
@@ -696,90 +700,127 @@ window.openProfileModal = () => {
   document.getElementById('profileSenhaConfirm').value = ''
   clearProfileMessage()
   modal.classList.add('open')
+}
+
+// ─── STEP 5: MEUS AGENDAMENTOS ───────────────────────────
+let _agendamentosCache  = []
+let _agendamentoFiltro  = 'todos'
+
+window.abrirMeusAgendamentos = () => {
+  if (!isLoggedIn) { openLoginModal(); return }
+  goToStep(5)
   loadHistorico()
+  // Anima header ao entrar
+  reveal(document.querySelector('#step-5 .section-label'), 0)
+  reveal(document.querySelector('#step-5 .section-title'), 80)
+  reveal(document.querySelector('#step-5 .agend-filters'), 200)
 }
 
 async function loadHistorico() {
-  const container = document.getElementById('profileHistorico')
-  if (!container) return
-  container.innerHTML = `<div style="color:var(--muted);font-size:12px;letter-spacing:1px;padding:8px 0">Carregando...</div>`
+  const list = document.getElementById('agendList')
+  if (!list) return
+  list.innerHTML = `<div class="agend-empty"><div class="empty-icon">⏳</div>Carregando seus agendamentos...</div>`
 
   try {
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      list.innerHTML = `<div class="agend-empty"><div class="empty-icon">🔒</div>Faça login pra ver seus agendamentos.</div>`
+      return
+    }
+
     const { data, error } = await supabase
       .from('agendamentos')
       .select('id, servico, barbeiro, horario, status, filial_id')
       .eq('cliente_id', user.id)
       .order('horario', { ascending: false })
-      .limit(10)
+      .limit(50)
 
     if (error) throw error
 
-    if (!data || data.length === 0) {
-      container.innerHTML = `<div style="color:var(--muted);font-size:12px;letter-spacing:1px;padding:8px 0">Nenhum agendamento ainda.</div>`
-      return
-    }
+    _agendamentosCache = data || []
+    renderHistorico()
+  } catch (err) {
+    list.innerHTML = `<div class="agend-empty" style="color:#e74c3c"><div class="empty-icon">⚠️</div>Erro ao carregar agendamentos.</div>`
+  }
+}
 
-    const mesesPt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-    const statusColor = { confirmado: '#2ecc71', pendente: '#f39c12', cancelado: '#e74c3c' }
+window.setAgendamentoFilter = (filtro) => {
+  _agendamentoFiltro = filtro
+  document.querySelectorAll('.agend-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filtro)
+  })
+  renderHistorico()
+}
 
-    const now = new Date()
-    container.innerHTML = data.map(ag => {
-      const d    = new Date(ag.horario)
-      const dia  = String(d.getDate()).padStart(2,'0')
-      const mes  = mesesPt[d.getMonth()]
-      const hora = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
-      const cor  = statusColor[ag.status] || '#888'
-      const filialNome = DATA.filiais.find(f => f.id === ag.filial_id)?.nome || `Unidade ${ag.filial_id}`
-      const podeAlterar = d > now && (ag.status === 'confirmado' || ag.status === 'pendente')
-      return `
-        <div
-          data-ag-id="${ag.id}"
-          data-filial="${ag.filial_id}"
-          data-barbeiro="${escapeHTML(ag.barbeiro)}"
-          style="
-            padding: 12px 14px;
-            margin-bottom: 8px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 13px;
-            letter-spacing: 0.5px;
-          "
-        >
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="color:var(--white);font-weight:600">${escapeHTML(ag.servico)}</span>
-            <span style="color:${cor};font-size:11px;letter-spacing:1px;text-transform:uppercase">${ag.status}</span>
-          </div>
-          <div style="color:var(--muted)">
-            ${escapeHTML(ag.barbeiro)} · ${escapeHTML(filialNome)}
-          </div>
-          <div style="color:var(--muted);font-size:11px;margin-top:3px">
+function renderHistorico() {
+  const list = document.getElementById('agendList')
+  if (!list) return
+
+  const mesesPt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+  const now = new Date()
+
+  let lista = _agendamentosCache
+  if (_agendamentoFiltro === 'proximos') {
+    lista = lista.filter(ag => new Date(ag.horario) > now && ag.status !== 'cancelado')
+  } else if (_agendamentoFiltro === 'passados') {
+    lista = lista.filter(ag => new Date(ag.horario) <= now || ag.status === 'cancelado')
+  }
+
+  if (!lista.length) {
+    const isFirst = _agendamentosCache.length === 0
+    list.innerHTML = `
+      <div class="agend-empty">
+        <div class="empty-icon">${isFirst ? '✂️' : '🗂️'}</div>
+        ${isFirst ? 'Você ainda não tem agendamentos.' : 'Nenhum agendamento neste filtro.'}
+        ${isFirst ? `<div><button class="agend-empty-cta" onclick="goToStep(1)">Agendar agora</button></div>` : ''}
+      </div>
+    `
+    return
+  }
+
+  list.innerHTML = lista.map(ag => {
+    const d    = new Date(ag.horario)
+    const dia  = String(d.getDate()).padStart(2,'0')
+    const mes  = mesesPt[d.getMonth()]
+    const hora = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+    const filialNome = DATA.filiais.find(f => f.id === ag.filial_id)?.nome || `Unidade ${ag.filial_id}`
+    const isPassado = d <= now
+    const podeAlterar = d > now && (ag.status === 'confirmado' || ag.status === 'pendente')
+
+    return `
+      <div class="agend-card${isPassado ? ' passado' : ''}"
+           data-ag-id="${ag.id}"
+           data-filial="${ag.filial_id}"
+           data-barbeiro="${escapeHTML(ag.barbeiro)}">
+        <div class="agend-card-top">
+          <div class="agend-card-svc">${escapeHTML(ag.servico)}</div>
+          <div class="agend-card-status ${ag.status}">${ag.status}</div>
+        </div>
+        <div class="agend-card-info">
+          <div class="row date">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             ${dia}/${mes} às ${hora}
           </div>
-          ${podeAlterar ? `
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-            <button
-              onclick="reagendarFromCard(this)"
-              style="background:none;border:1px solid #555;color:#aaa;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;transition:background 0.2s,color 0.2s"
-              onmouseover="this.style.background='rgba(255,255,255,0.07)'"
-              onmouseout="this.style.background='none'"
-            >Reagendar</button>
-            <button
-              onclick="cancelarAgendamento('${ag.id}')"
-              style="background:none;border:1px solid #c0392b;color:#e74c3c;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;transition:background 0.2s,color 0.2s"
-              onmouseover="this.style.background='rgba(192,57,43,0.15)'"
-              onmouseout="this.style.background='none'"
-            >Cancelar</button>
+          <div class="row">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            ${escapeHTML(ag.barbeiro)}
           </div>
-          ` : ''}
+          <div class="row">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${escapeHTML(filialNome)}
+          </div>
         </div>
-      `
-    }).join('')
-  } catch (err) {
-    container.innerHTML = `<div style="color:#e74c3c;font-size:12px">Erro ao carregar histórico.</div>`
-  }
+        ${podeAlterar ? `
+        <div class="agend-card-actions">
+          <button class="btn-reagendar" onclick="reagendarFromCard(this)">Reagendar</button>
+          <button class="btn-cancelar"  onclick="cancelarAgendamento('${ag.id}')">Cancelar</button>
+        </div>` : ''}
+      </div>
+    `
+  }).join('')
+
+  // Animações de entrada com stagger
+  revealStagger('#agendList .agend-card', 60)
 }
 
 window.cancelarAgendamento = async (id) => {
@@ -1829,6 +1870,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('back1').addEventListener('click',      () => goToStep(0))
   document.getElementById('back2').addEventListener('click',      () => goToStep(1))
   document.getElementById('back3').addEventListener('click',      () => goToStep(2))
+  document.getElementById('back5')?.addEventListener('click',     () => goToStep(0))
   document.getElementById('btnReset').addEventListener('click',   resetFlow)
 
   let _tx = null, _ty = null

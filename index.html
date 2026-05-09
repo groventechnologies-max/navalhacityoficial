@@ -161,6 +161,44 @@
       <div class="step-content" id="scheduleContent"></div>
     </div>
 
+    <!-- STEP 5: MEUS AGENDAMENTOS -->
+    <div class="step" id="step-5">
+      <nav class="step-nav">
+        <button class="btn-back" id="back5">Voltar</button>
+        <div></div>
+        <div class="nav-right">
+          <div class="nav-brand-group">
+            <img class="nav-logo" src="/src/logo.jpeg" alt="Navalha City">
+            <div class="nav-brand">Navalha<span>City</span></div>
+          </div>
+          <button class="nav-login-btn">Login</button>
+          <a href="/dashboard" class="nav-dash-btn" style="display:none">Dashboard</a>
+          <a href="https://www.instagram.com/barbearia_navalhacity?igsh=MTUyaHpjaTg2b2lmdw==" target="_blank" rel="noopener" class="nav-instagram" aria-label="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>
+          </a>
+          <button class="nav-hamburger" aria-label="Menu" onclick="toggleMobileMenu(this)">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </nav>
+      <div class="step-content">
+        <div class="agend-header">
+          <div class="section-label">Sua conta</div>
+          <h2 class="section-title">Meus<br>Agendamentos</h2>
+          <div class="agend-filters" id="agendFilters">
+            <button class="agend-filter-btn active" data-filter="todos" onclick="setAgendamentoFilter('todos')">Todos</button>
+            <button class="agend-filter-btn"        data-filter="proximos" onclick="setAgendamentoFilter('proximos')">Próximos</button>
+            <button class="agend-filter-btn"        data-filter="passados" onclick="setAgendamentoFilter('passados')">Passados</button>
+          </div>
+        </div>
+        <div class="agend-list" id="agendList"></div>
+        <footer class="step-footer">
+          <div class="logo-ft">Navalha<span>City</span></div>
+          <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela <a href="https://groven.netlify.app/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;opacity:0.7;">Groven</a></div>
+        </footer>
+      </div>
+    </div>
+
     <!-- STEP 4: CONFIRMACAO -->
     <div class="step" id="step-4">
       <nav class="step-nav">
@@ -195,6 +233,11 @@
     <button class="nav-mobile-item" id="mobileLoginItem" onclick="onMobileLoginClick()">
       <svg class="nav-mobile-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       <span id="mobileLoginLabel">Login</span>
+    </button>
+    <!-- meus agendamentos — só logado -->
+    <button class="nav-mobile-item" id="mobileAgendItem" style="display:none" onclick="closeMobileMenu(); abrirMeusAgendamentos()">
+      <svg class="nav-mobile-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Meus agendamentos
     </button>
     <!-- dashboard — oculto por padrão, mostrado pelo JS -->
     <a href="/dashboard" class="nav-mobile-item" id="mobileDashItem" style="display:none">
@@ -292,13 +335,14 @@
 
       <button class="btn-confirm" id="profileSaveBtn" onclick="saveProfile()">Salvar alteracoes</button>
 
+      <button class="btn-profile-link" onclick="closeProfileModal(); abrirMeusAgendamentos()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Meus agendamentos</span>
+        <span class="btn-profile-link-arrow">→</span>
+      </button>
+
       <div class="login-modal-switch" style="margin-top:16px">
         <a href="#" onclick="logoutUser(); return false;" style="color:var(--muted);font-size:12px;letter-spacing:1px">Sair da conta</a>
-      </div>
-
-      <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:16px">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:12px">MEUS AGENDAMENTOS</div>
-        <div id="profileHistorico"></div>
       </div>
     </div>
   </div>

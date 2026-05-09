@@ -1912,6 +1912,173 @@ body {
 
 /* (prefers-reduced-motion intencionalmente ignorado — ver main.js) */
 
+/* ─── BTN PROFILE LINK (modal de perfil → step de agendamentos) ─── */
+.btn-profile-link {
+  margin-top: 14px; width: 100%;
+  display: flex; align-items: center; gap: 12px;
+  background: none; border: 1px solid var(--border);
+  color: var(--text); padding: 14px 16px;
+  border-radius: 2px; cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.btn-profile-link:hover {
+  border-color: var(--orange-dim);
+  color: var(--white);
+  background: rgba(255,255,255,0.04);
+}
+.btn-profile-link svg { flex-shrink: 0; opacity: .8; }
+.btn-profile-link span:nth-of-type(1) { flex: 1; text-align: left; }
+.btn-profile-link-arrow { opacity: .6; transition: transform .2s, opacity .2s; }
+.btn-profile-link:hover .btn-profile-link-arrow { transform: translateX(3px); opacity: 1; }
+
+/* ─── STEP 5 — MEUS AGENDAMENTOS ──────────────────────── */
+#step-5 .step-content {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 32px 80px;
+}
+.agend-header { margin-bottom: 32px; }
+
+.agend-filters {
+  display: flex; gap: 8px; margin-top: 24px; flex-wrap: wrap;
+}
+.agend-filter-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 8px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.agend-filter-btn:hover { color: var(--white); border-color: #444; }
+.agend-filter-btn.active {
+  color: var(--black); background: var(--white); border-color: var(--white);
+  font-weight: 600;
+}
+
+.agend-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.agend-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color .25s, transform .25s;
+  position: relative;
+}
+.agend-card:hover { border-color: #3a3a3a; }
+.agend-card.passado { opacity: .55; }
+
+.agend-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px;
+}
+.agend-card-svc {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--white);
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+.agend-card-status {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.agend-card-status.confirmado { color: #2ecc71; border-color: rgba(46,204,113,.4);  background: rgba(46,204,113,.08); }
+.agend-card-status.pendente   { color: #f39c12; border-color: rgba(243,156,18,.4);  background: rgba(243,156,18,.08); }
+.agend-card-status.cancelado  { color: #e74c3c; border-color: rgba(231,76,60,.4);   background: rgba(231,76,60,.08); }
+
+.agend-card-info {
+  display: flex; flex-direction: column; gap: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  letter-spacing: 0.3px;
+}
+.agend-card-info .row {
+  display: flex; align-items: center; gap: 8px;
+}
+.agend-card-info .row svg { opacity: .6; flex-shrink: 0; }
+.agend-card-info .row.date { color: var(--white); font-weight: 600; }
+
+.agend-card-actions {
+  display: flex; gap: 8px; margin-top: 4px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.agend-card-actions button {
+  flex: 1;
+  background: none;
+  border: 1px solid;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 9px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.agend-card-actions .btn-reagendar { color: #aaa; border-color: #444; }
+.agend-card-actions .btn-reagendar:hover { background: rgba(255,255,255,.06); color: var(--white); }
+.agend-card-actions .btn-cancelar  { color: #e74c3c; border-color: rgba(192,57,43,.5); }
+.agend-card-actions .btn-cancelar:hover  { background: rgba(192,57,43,.15); }
+
+.agend-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 64px 24px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; letter-spacing: 1px;
+  color: var(--muted);
+}
+.agend-empty .empty-icon {
+  font-size: 36px; margin-bottom: 12px; opacity: .4;
+}
+.agend-empty .agend-empty-cta {
+  margin-top: 16px;
+  padding: 10px 24px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+}
+.agend-empty .agend-empty-cta:hover { color: var(--white); border-color: var(--orange-dim); }
+
+@media (max-width: 700px) {
+  #step-5 .step-content { padding: 20px 16px 60px; }
+  .agend-list { grid-template-columns: 1fr; gap: 10px; }
+  .agend-card { padding: 14px 16px; gap: 10px; }
+  .agend-card-svc { font-size: 16px; }
+  .agend-card-info { font-size: 12px; }
+  .agend-filters { gap: 6px; }
+  .agend-filter-btn { font-size: 11px; padding: 7px 12px; letter-spacing: 1.5px; }
+  .agend-card-actions button { font-size: 11px; padding: 8px 10px; letter-spacing: 1px; }
+}
+
 /* ─── RIPPLE EFFECT ──────────────────────────────────── */
 .ripple-host {
   position: relative;

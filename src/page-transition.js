@@ -22,40 +22,35 @@
 
   function getCurtain() { return document.getElementById('curtain') }
 
-  // ── ENTRADA: se vier de uma transição, mantém curtain coberto e abre suavemente ──
+  // ── ENTRADA: se a classe page-entering existe, abre o curtain ──
   function handleEnter() {
-    if (sessionStorage.getItem(FLAG) !== '1') return
+    const html = document.documentElement
+    const fromTransition = html.classList.contains('page-entering') ||
+                           sessionStorage.getItem(FLAG) === '1'
+    if (!fromTransition) return
     sessionStorage.removeItem(FLAG)
 
-    // Injeta estilo que mantém curtain coberto SEM animação até o JS principal rodar.
-    const earlyStyle = document.createElement('style')
-    earlyStyle.id = '_curtainEarlyCover'
-    earlyStyle.textContent = `
-      #curtain { pointer-events: all !important; }
-      #curtain .curtain-top    { transform: translateY(0) !important; transition: none !important; }
-      #curtain .curtain-bottom { transform: translateY(0) !important; transition: none !important; }
-      #curtain .curtain-mark   { opacity: 1 !important; transition: opacity 0.3s ease !important; }
-      #curtain .curtain-mark-text { transform: translateY(0) !important; }
-      #curtain .curtain-mark-line { width: 140px !important; }
-    `
-    if (document.head) document.head.appendChild(earlyStyle)
-    else document.addEventListener('DOMContentLoaded', () => document.head.appendChild(earlyStyle), { once: true })
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // Pequeno delay pra garantir que o conteúdo já está renderizado antes do curtain abrir
+    function open() {
+      const curtain = getCurtain()
+      if (!curtain) { html.classList.remove('page-entering'); return }
+      // Pequeno delay pra deixar o conteúdo da página renderizar antes
       setTimeout(() => {
-        const curtain = getCurtain()
-        if (!curtain) { earlyStyle.remove(); return }
-        // Remove o early style e ativa as classes oficiais pra animar saída
-        earlyStyle.remove()
+        // Antes de remover a classe, fixamos o estado "cover" via classe oficial pra
+        // garantir continuidade visual quando page-entering for retirada
         curtain.classList.add('cover')
-        // Reflow pra commit do estado coberto via classes nativas
         void curtain.offsetWidth
+        html.classList.remove('page-entering')
         curtain.classList.remove('cover')
         curtain.classList.add('uncover')
         setTimeout(() => curtain.classList.remove('uncover'), CURTAIN_DURATION + 50)
-      }, 80)
-    }, { once: true })
+      }, 100)
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', open, { once: true })
+    } else {
+      open()
+    }
   }
 
   // ── SAÍDA: cobre, salva flag, navega ──

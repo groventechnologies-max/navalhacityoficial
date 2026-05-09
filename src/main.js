@@ -1574,7 +1574,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Se a página está sendo aberta vinda de uma transição (ex: dashboard → /),
   // pula o loading screen e o scramble pra não duplicar com o curtain.
-  const cameFromTransition = !!document.getElementById('_curtainEarlyCover')
+  const cameFromTransition = document.documentElement.classList.contains('page-entering')
 
   // ── Boot sequence: loading → hero anim → scramble + parallax ──
   ;(async () => {

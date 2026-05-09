@@ -8,6 +8,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/style.css">
+  <script>
+    // Detecta flag de transição cedo (antes do CSS render) pra evitar flash
+    if (sessionStorage.getItem('pageTransitionEnter') === '1') {
+      document.documentElement.classList.add('page-entering')
+    }
+  </script>
+  <style>
+    html.page-entering #curtain { pointer-events: all; }
+    html.page-entering #curtain .curtain-top,
+    html.page-entering #curtain .curtain-bottom { transform: translateY(0) !important; transition: none !important; }
+    html.page-entering #curtain .curtain-mark { opacity: 1 !important; }
+    html.page-entering #curtain .curtain-mark-text { transform: translateY(0) !important; }
+    html.page-entering #curtain .curtain-mark-line { width: 140px !important; }
+    /* Esconde loading screen quando vindo de transição */
+    html.page-entering #loadingScreen { display: none !important; }
+  </style>
 </head>
 <body>
 
@@ -309,7 +325,7 @@
     </div>
   </div>
 
-  <script src="/src/page-transition.js"></script>
+  <script type="module" src="/src/page-transition.js"></script>
   <script type="module" src="/src/main.js"></script>
 
   <script>

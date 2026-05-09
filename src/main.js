@@ -1571,50 +1571,99 @@ window.closeReagendarModal = () => {
   document.getElementById('reagendarModal')?.classList.remove('open')
 }
 
-function renderReagendarDias() {
-  const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-  const months   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-  const today    = new Date()
-  document.getElementById('reagendarDaysStrip').innerHTML = Array.from({ length: 14 }, (_, i) => {
-    const d   = new Date(today)
-    d.setDate(today.getDate() + i + 1)
-    const wd  = weekdays[d.getDay()]
-    const dn  = d.getDate()
-    const mon = months[d.getMonth()]
-    const label = `${wd} ${dn}/${mon}`
-    return `
-      <div class="day-btn" id="rday-${i}" onclick="selecionarDiaReagendar(${i}, '${label}')">
-        <div class="day-weekday">${wd}</div>
-        <div class="day-num">${dn}</div>
-        <div class="day-month" style="font-size:10px;opacity:0.6">${mon}</div>
-      </div>
-    `
-  }).join('')
+// Estado do calendário de reagendamento (independente do principal)
+const _calReagState = {
+  month: new Date().getMonth(),
+  year:  new Date().getFullYear(),
+  selected: null,
 }
 
-window.selecionarDiaReagendar = async (i, label) => {
-  document.querySelectorAll('#reagendarDaysStrip .day-btn').forEach(b => b.classList.remove('selected'))
-  const btn = document.getElementById(`rday-${i}`)
-  if (btn) btn.classList.add('selected')
-  _reagendar.dia     = label
-  _reagendar.horario = null
+function renderReagendarDias() {
+  const today = new Date()
+  _calReagState.month = today.getMonth()
+  _calReagState.year  = today.getFullYear()
+  _calReagState.selected = null
+  renderReagendarCalendar()
+}
+
+function renderReagendarCalendar() {
+  const host = document.getElementById('reagendarDaysStrip')
+  if (!host) return
+  const today = new Date(); today.setHours(0,0,0,0)
+  const minMonth  = new Date(today.getFullYear(), today.getMonth(), 1)
+  const maxFuture = new Date(today); maxFuture.setMonth(today.getMonth() + 2)
+
+  const { month, year } = _calReagState
+  const firstDay = new Date(year, month, 1)
+  const lastDay  = new Date(year, month + 1, 0)
+  const startWd  = firstDay.getDay()
+  const daysIn   = lastDay.getDate()
+
+  const canPrev = (year > minMonth.getFullYear()) ||
+                  (year === minMonth.getFullYear() && month > minMonth.getMonth())
+  const canNext = (year < maxFuture.getFullYear()) ||
+                  (year === maxFuture.getFullYear() && month < maxFuture.getMonth())
+
+  let html = `
+    <div class="cal-header">
+      <div class="cal-month">${MESES_PT_FULL[month]} ${year}</div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="navReagCalendar(-1)" ${canPrev ? '' : 'disabled'}>‹</button>
+        <button class="cal-nav-btn" onclick="navReagCalendar(1)"  ${canNext ? '' : 'disabled'}>›</button>
+      </div>
+    </div>
+    <div class="cal-grid">
+      ${WEEKDAYS_HEADER.map(w => `<div class="cal-weekday">${w}</div>`).join('')}
+  `
+  for (let i = 0; i < startWd; i++) html += `<div class="cal-day empty"></div>`
+  for (let d = 1; d <= daysIn; d++) {
+    const date = new Date(year, month, d); date.setHours(0,0,0,0)
+    const iso  = fmtDateISO(date)
+    const isPast    = date < today
+    const isSunday  = date.getDay() === 0
+    const isFar     = date > maxFuture
+    const isToday   = date.getTime() === today.getTime()
+    const disabled  = isPast || isSunday || isFar
+    const selected  = _calReagState.selected === iso
+    const cls = ['cal-day']
+    if (disabled) cls.push('disabled')
+    if (isToday)  cls.push('today')
+    if (selected) cls.push('selected')
+    const onclick = disabled ? '' : `onclick="selecionarDiaReagendar('${iso}')"`
+    html += `<div class="${cls.join(' ')}" ${onclick}>${d}</div>`
+  }
+  html += `</div>`
+  host.innerHTML = html
+}
+
+window.navReagCalendar = (dir) => {
+  _calReagState.month += dir
+  if (_calReagState.month > 11) { _calReagState.month = 0;  _calReagState.year++ }
+  if (_calReagState.month < 0)  { _calReagState.month = 11; _calReagState.year-- }
+  renderReagendarCalendar()
+}
+
+window.selecionarDiaReagendar = async (dateISO) => {
+  _calReagState.selected = dateISO
+  renderReagendarCalendar()
+  const dateObj = new Date(dateISO + 'T00:00:00')
+  _reagendar.dia      = dateISO
+  _reagendar.diaLabel = fmtDateLabel(dateObj)
+  _reagendar.horario  = null
   const grid = document.getElementById('reagendarTimesGrid')
   if (grid) grid.innerHTML = `<div style="color:var(--muted);font-size:13px;letter-spacing:1px;padding:8px 0">Verificando disponibilidade...</div>`
-  await renderReagendarHorarios(label)
+  await renderReagendarHorarios(dateISO)
 }
 
-async function renderReagendarHorarios(label) {
+async function renderReagendarHorarios(dateISO) {
   const grid = document.getElementById('reagendarTimesGrid')
   let ocupados = new Set()
   let bloqueios = []
   let dia, mes, ano
 
   try {
-    const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
-    const partes = label.split(' ')[1].split('/')
-    dia    = parseInt(partes[0])
-    mes    = meses[partes[1]]
-    ano    = new Date().getFullYear()
+    const [y, mm, dd] = dateISO.split('-').map(Number)
+    ano = y; mes = mm - 1; dia = dd
     const dataInicio = new Date(ano, mes, dia, 0, 0, 0).toISOString()
     const dataFim    = new Date(ano, mes, dia, 23, 59, 59).toISOString()
     const [agRes, blqRes] = await Promise.all([
@@ -1685,7 +1734,7 @@ window.confirmarReagendamento = async () => {
   btn.disabled    = true
   msgEl.style.display = 'none'
   try {
-    const novoHorario = labelParaISO(_reagendar.dia, _reagendar.horario)
+    const novoHorario = dateAndTimeToISO(_reagendar.dia, _reagendar.horario)
     const { error } = await supabase
       .from('agendamentos')
       .update({ horario: novoHorario, status: 'confirmado' })

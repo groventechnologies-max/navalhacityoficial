@@ -1029,7 +1029,7 @@ window.selecionarFilial = async (id) => {
 
   const { data } = await supabase
     .from('equipe')
-    .select('nome, especialidade, nota, foto_url')
+    .select('nome, especialidade, nota, foto_url, portfolio_urls')
     .eq('filial_id', id)
     .eq('status', 'ativo')
     .order('nome', { ascending: true })
@@ -1043,6 +1043,7 @@ window.selecionarFilial = async (id) => {
         nota:          m.nota ? `${m.nota} ★` : '',
         foto:          m.foto_url || null,
         emoji:         '✂️',
+        portfolio:     Array.isArray(m.portfolio_urls) ? m.portfolio_urls : [],
       })),
     }
   }

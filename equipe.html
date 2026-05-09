@@ -277,6 +277,23 @@
     }
     .btn-remove-photo.visible { display: block; }
 
+    /* ── PORTFOLIO THUMB ── */
+    .pf-thumb {
+      position: relative; aspect-ratio: 1; border-radius: 4px;
+      background: var(--card2); border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .pf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pf-thumb .pf-remove {
+      position: absolute; top: 4px; right: 4px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(0,0,0,.75); border: 1px solid var(--red);
+      color: var(--red); font-size: 14px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .2s;
+    }
+    .pf-thumb .pf-remove:hover { background: var(--red); color: white; }
+
     /* ── MODAL DE CONFIRMAÇÃO ── */
     .confirm-overlay {
       display: none; position: fixed; inset: 0; z-index: 300;
@@ -531,6 +548,14 @@
         </div>
       </div>
 
+      <div class="form-field">
+        <label>Portfolio (cortes que ele fez)</label>
+        <div id="portfolioGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(80px, 1fr));gap:8px;margin-bottom:8px"></div>
+        <button type="button" class="btn-choose-photo" onclick="document.getElementById('portfolioInput').click()">+ Adicionar foto</button>
+        <input type="file" id="portfolioInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none" onchange="onPortfolioSelected(this)">
+        <div class="photo-upload-note">JPG, PNG ou WebP · até 2MB cada</div>
+      </div>
+
       <div class="modal-actions">
         <button class="btn-cancel-modal" onclick="closeModal()">Cancelar</button>
         <button class="btn-save" id="btnSave" onclick="saveMember()">Salvar</button>
@@ -567,6 +592,8 @@
     let deletingId = null
     let photoFile    = null
     let photoRemoved = false
+    // Portfolio: lista misturada de URLs já existentes e arquivos novos a enviar
+    let portfolioItems = []  // [{ url: string, file?: File }]
 
     // ─── AUTH ─────────────────────────────────────────────
     async function init() {
@@ -691,7 +718,9 @@
       clearModalMsg()
       photoFile    = null
       photoRemoved = false
+      portfolioItems = []
       document.getElementById('photoInput').value = ''
+      document.getElementById('portfolioInput').value = ''
 
       if (id) {
         const m = allMembers.find(x => x.id === id)
@@ -706,6 +735,8 @@
         document.getElementById('fNota').value    = m.nota        || ''
         document.getElementById('fStatus').value  = m.status      || 'ativo'
         setPhotoPreview(m.foto_url || null)
+        portfolioItems = (Array.isArray(m.portfolio_urls) ? m.portfolio_urls : [])
+          .map(url => ({ url }))
       } else {
         document.getElementById('modalTitle').textContent = 'Novo Membro'
         document.getElementById('editingId').value        = ''
@@ -718,9 +749,45 @@
         document.getElementById('fStatus').value  = 'ativo'
         setPhotoPreview(null)
       }
+      renderPortfolioGrid()
 
       modal.classList.add('open')
       document.getElementById('fNome').focus()
+    }
+
+    function renderPortfolioGrid() {
+      const grid = document.getElementById('portfolioGrid')
+      if (!grid) return
+      if (!portfolioItems.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--muted);padding:8px 0">Nenhuma foto ainda.</div>`
+        return
+      }
+      grid.innerHTML = portfolioItems.map((it, i) => `
+        <div class="pf-thumb">
+          <img src="${esc(it.url)}" alt="portfolio">
+          <button type="button" class="pf-remove" onclick="removePortfolioItem(${i})">×</button>
+        </div>
+      `).join('')
+    }
+
+    window.removePortfolioItem = function(idx) {
+      const it = portfolioItems[idx]
+      if (it && it.url && it.url.startsWith('blob:')) URL.revokeObjectURL(it.url)
+      portfolioItems.splice(idx, 1)
+      renderPortfolioGrid()
+    }
+
+    window.onPortfolioSelected = function(input) {
+      const files = Array.from(input.files || [])
+      for (const file of files) {
+        if (file.size > 2 * 1024 * 1024) {
+          showModalMsg(`A foto "${file.name}" excede 2MB.`, 'error')
+          continue
+        }
+        portfolioItems.push({ url: URL.createObjectURL(file), file })
+      }
+      input.value = ''
+      renderPortfolioGrid()
     }
 
     function setPhotoPreview(url) {
@@ -803,8 +870,27 @@
           foto_url = urlData.publicUrl
         }
 
+        // ── Upload das fotos novas do portfolio ────────────
+        const portfolio_urls = []
+        for (let i = 0; i < portfolioItems.length; i++) {
+          const item = portfolioItems[i]
+          if (item.file) {
+            btn.textContent = `Enviando portfolio ${i + 1}/${portfolioItems.length}...`
+            const ext  = item.file.name.split('.').pop().toLowerCase()
+            const path = `portfolio/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+            const { data: up, error: upErr } = await supabase.storage
+              .from('equipe')
+              .upload(path, item.file, { upsert: true, contentType: item.file.type })
+            if (upErr) throw new Error('Erro ao enviar foto: ' + upErr.message)
+            const { data: urlData } = supabase.storage.from('equipe').getPublicUrl(up.path)
+            portfolio_urls.push(urlData.publicUrl)
+          } else {
+            portfolio_urls.push(item.url)
+          }
+        }
+
         btn.textContent = 'Salvando...'
-        const payload = { nome, telefone: tel, role, filial_id, especialidade, nota, status, foto_url }
+        const payload = { nome, telefone: tel, role, filial_id, especialidade, nota, status, foto_url, portfolio_urls }
 
         let error
         if (id) {

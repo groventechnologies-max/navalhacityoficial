@@ -267,6 +267,28 @@
     </div>
   </div>
 
+  <!-- MODAL DE REAGENDAMENTO -->
+  <div class="login-modal-overlay" id="reagendarModal">
+    <div class="login-modal" style="max-width:480px;width:95%;max-height:90vh;overflow-y:auto">
+      <button class="login-modal-close" onclick="closeReagendarModal()">X</button>
+      <div class="login-modal-logo">Navalha<span>City</span></div>
+      <h2 class="login-modal-title" id="reagendarTitle">Reagendar</h2>
+      <div id="reagendarContext" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:20px"></div>
+
+      <div style="margin-bottom:12px">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:10px">ESCOLHA A DATA</div>
+        <div class="days-strip" id="reagendarDaysStrip" style="overflow-x:auto;padding-bottom:8px"></div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <div class="times-grid" id="reagendarTimesGrid"></div>
+      </div>
+
+      <div id="reagendarMsg" style="display:none;color:#e74c3c;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;margin-bottom:12px"></div>
+      <button class="btn-confirm" id="reagendarBtn" onclick="confirmarReagendamento()">Confirmar novo horário</button>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 
   <script>

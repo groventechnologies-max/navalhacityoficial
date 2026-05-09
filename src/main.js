@@ -277,6 +277,7 @@ window.submitLogin = async () => {
       updateNavLoginBtns()
       const cs1 = document.getElementById('confirmSection')
       if (cs1) cs1.innerHTML = renderConfirmSection()
+      applyConfirmPhoneMask()
 
     } else {
       const identifier = document.getElementById('loginIdentifier').value.trim()
@@ -287,6 +288,7 @@ window.submitLogin = async () => {
       updateNavLoginBtns()
       const cs2 = document.getElementById('confirmSection')
       if (cs2) cs2.innerHTML = renderConfirmSection()
+      applyConfirmPhoneMask()
     }
 
   } catch (err) {
@@ -312,6 +314,11 @@ function applyPhoneMask(input) {
   })
 }
 
+function applyConfirmPhoneMask() {
+  const el = document.getElementById('clientPhone')
+  if (el) applyPhoneMask(el)
+}
+
 // ─── MODAL DE PERFIL ─────────────────────────────────────
 window.openProfileModal = () => {
   const modal = document.getElementById('profileModal')
@@ -334,7 +341,7 @@ async function loadHistorico() {
     const { data: { user } } = await supabase.auth.getUser()
     const { data, error } = await supabase
       .from('agendamentos')
-      .select('servico, barbeiro, horario, status, filial_id')
+      .select('id, servico, barbeiro, horario, status, filial_id')
       .eq('cliente_id', user.id)
       .order('horario', { ascending: false })
       .limit(10)
@@ -349,6 +356,7 @@ async function loadHistorico() {
     const mesesPt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
     const statusColor = { confirmado: '#2ecc71', pendente: '#f39c12', cancelado: '#e74c3c' }
 
+    const now = new Date()
     container.innerHTML = data.map(ag => {
       const d    = new Date(ag.horario)
       const dia  = String(d.getDate()).padStart(2,'0')
@@ -356,17 +364,23 @@ async function loadHistorico() {
       const hora = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
       const cor  = statusColor[ag.status] || '#888'
       const filialNome = DATA.filiais.find(f => f.id === ag.filial_id)?.nome || `Unidade ${ag.filial_id}`
+      const podeAlterar = d > now && (ag.status === 'confirmado' || ag.status === 'pendente')
       return `
-        <div style="
-          padding: 12px 14px;
-          margin-bottom: 8px;
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 4px;
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 13px;
-          letter-spacing: 0.5px;
-        ">
+        <div
+          data-ag-id="${ag.id}"
+          data-filial="${ag.filial_id}"
+          data-barbeiro="${escapeHTML(ag.barbeiro)}"
+          style="
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+          "
+        >
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
             <span style="color:var(--white);font-weight:600">${escapeHTML(ag.servico)}</span>
             <span style="color:${cor};font-size:11px;letter-spacing:1px;text-transform:uppercase">${ag.status}</span>
@@ -377,11 +391,44 @@ async function loadHistorico() {
           <div style="color:var(--muted);font-size:11px;margin-top:3px">
             ${dia}/${mes} às ${hora}
           </div>
+          ${podeAlterar ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button
+              onclick="reagendarFromCard(this)"
+              style="background:none;border:1px solid #555;color:#aaa;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;transition:background 0.2s,color 0.2s"
+              onmouseover="this.style.background='rgba(255,255,255,0.07)'"
+              onmouseout="this.style.background='none'"
+            >Reagendar</button>
+            <button
+              onclick="cancelarAgendamento('${ag.id}')"
+              style="background:none;border:1px solid #c0392b;color:#e74c3c;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;transition:background 0.2s,color 0.2s"
+              onmouseover="this.style.background='rgba(192,57,43,0.15)'"
+              onmouseout="this.style.background='none'"
+            >Cancelar</button>
+          </div>
+          ` : ''}
         </div>
       `
     }).join('')
   } catch (err) {
     container.innerHTML = `<div style="color:#e74c3c;font-size:12px">Erro ao carregar histórico.</div>`
+  }
+}
+
+window.cancelarAgendamento = async (id) => {
+  if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return
+
+  try {
+    const { error } = await supabase
+      .from('agendamentos')
+      .update({ status: 'cancelado' })
+      .eq('id', id)
+
+    if (error) throw new Error(error.message)
+
+    loadHistorico()
+  } catch (err) {
+    alert('Erro ao cancelar: ' + (err.message || 'Tente novamente.'))
   }
 }
 
@@ -734,6 +781,7 @@ function renderAgendamento() {
   `
 
   renderDias()
+  applyConfirmPhoneMask()
 }
 
 function renderConfirmSection() {
@@ -809,7 +857,7 @@ function labelParaISO(label, horario) {
   const ano    = new Date().getFullYear()
   const [h, m] = horario.split(':').map(Number)
   const d = new Date(ano, mes, dia, h, m)
-  if (d < new Date() && (new Date() - d) > 180 * 864e5) d.setFullYear(ano + 1)
+  if (d < new Date()) d.setFullYear(ano + 1)
   return d.toISOString()
 }
 
@@ -930,22 +978,24 @@ window.confirmarAgendamento = async () => {
     }
     goToStep(4)
 
-    const wap = state.filial.whatsapp
-    if (wap) {
+    const rawTel = tel.replace(/\D/g, '')
+    if (rawTel.length >= 10) {
       const msg = [
-        `✂️ *Novo Agendamento — Navalha City*`,
+        `✂️ *Agendamento Confirmado — Navalha City*`,
         ``,
-        `👤 *Cliente:* ${nome}`,
-        `📞 *WhatsApp:* ${tel}`,
+        `Olá, ${nome}! Seu horário foi confirmado com sucesso.`,
+        ``,
         `📌 *Unidade:* ${state.filial.nome}`,
-        `🗪️ *Barbeiro:* ${state.barbeiro.nome}`,
-        `💈 *Serviço:* ${state.servico.nome} (${state.servico.preco})`,
+        `💈 *Barbeiro:* ${state.barbeiro.nome}`,
+        `✂️ *Serviço:* ${state.servico.nome} (${state.servico.preco})`,
         `📅 *Data:* ${state.dia} às ${state.horario}`,
         document.getElementById('clientObs')?.value.trim()
           ? `📝 *Obs:* ${document.getElementById('clientObs').value.trim()}`
           : null,
+        ``,
+        `Até lá! 👋`,
       ].filter(Boolean).join('\n')
-      window.open(`https://wa.me/${wap}?text=${encodeURIComponent(msg)}`, '_blank')
+      window.open(`https://wa.me/55${rawTel}?text=${encodeURIComponent(msg)}`, '_blank')
     }
   } catch (err) {
     alert('Erro ao confirmar: ' + (err.message || 'Tente novamente.'))
@@ -957,6 +1007,134 @@ window.confirmarAgendamento = async () => {
 function resetFlow() {
   Object.assign(state, { filial: null, barbeiro: null, servico: null, dia: null, horario: null })
   goToStep(0)
+}
+
+// ─── REAGENDAMENTO ───────────────────────────────────────
+let _reagendar = { id: null, filialId: null, barbeiroNome: null, dia: null, horario: null }
+
+window.reagendarFromCard = (btn) => {
+  const card = btn.closest('[data-ag-id]')
+  reagendarAgendamento(card.dataset.agId, parseInt(card.dataset.filial), card.dataset.barbeiro)
+}
+
+window.reagendarAgendamento = (id, filialId, barbeiroNome) => {
+  _reagendar = { id, filialId, barbeiroNome, dia: null, horario: null }
+  document.getElementById('reagendarTitle').textContent = `Reagendar — ${barbeiroNome}`
+  document.getElementById('reagendarContext').textContent = `Escolha uma nova data e horário`
+  document.getElementById('reagendarMsg').style.display = 'none'
+  document.getElementById('reagendarTimesGrid').innerHTML = ''
+  renderReagendarDias()
+  document.getElementById('reagendarModal').classList.add('open')
+}
+
+window.closeReagendarModal = () => {
+  document.getElementById('reagendarModal')?.classList.remove('open')
+}
+
+function renderReagendarDias() {
+  const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+  const months   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+  const today    = new Date()
+  document.getElementById('reagendarDaysStrip').innerHTML = Array.from({ length: 14 }, (_, i) => {
+    const d   = new Date(today)
+    d.setDate(today.getDate() + i + 1)
+    const wd  = weekdays[d.getDay()]
+    const dn  = d.getDate()
+    const mon = months[d.getMonth()]
+    const label = `${wd} ${dn}/${mon}`
+    return `
+      <div class="day-btn" id="rday-${i}" onclick="selecionarDiaReagendar(${i}, '${label}')">
+        <div class="day-weekday">${wd}</div>
+        <div class="day-num">${dn}</div>
+        <div class="day-month" style="font-size:10px;opacity:0.6">${mon}</div>
+      </div>
+    `
+  }).join('')
+}
+
+window.selecionarDiaReagendar = async (i, label) => {
+  document.querySelectorAll('#reagendarDaysStrip .day-btn').forEach(b => b.classList.remove('selected'))
+  const btn = document.getElementById(`rday-${i}`)
+  if (btn) btn.classList.add('selected')
+  _reagendar.dia     = label
+  _reagendar.horario = null
+  const grid = document.getElementById('reagendarTimesGrid')
+  if (grid) grid.innerHTML = `<div style="color:var(--muted);font-size:13px;letter-spacing:1px;padding:8px 0">Verificando disponibilidade...</div>`
+  await renderReagendarHorarios(label)
+}
+
+async function renderReagendarHorarios(label) {
+  const grid = document.getElementById('reagendarTimesGrid')
+  let ocupados = new Set()
+  try {
+    const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
+    const partes = label.split(' ')[1].split('/')
+    const dia    = parseInt(partes[0])
+    const mes    = meses[partes[1]]
+    const ano    = new Date().getFullYear()
+    const dataInicio = new Date(ano, mes, dia, 0, 0, 0).toISOString()
+    const dataFim    = new Date(ano, mes, dia, 23, 59, 59).toISOString()
+    const { data } = await supabase
+      .from('agendamentos')
+      .select('horario')
+      .eq('filial_id',  _reagendar.filialId)
+      .eq('barbeiro',   _reagendar.barbeiroNome)
+      .gte('horario',   dataInicio)
+      .lte('horario',   dataFim)
+      .in('status',     ['confirmado', 'pendente'])
+      .neq('id',        _reagendar.id)
+    if (data) data.forEach(row => {
+      const h = new Date(row.horario)
+      ocupados.add(`${String(h.getHours()).padStart(2,'0')}:${String(h.getMinutes()).padStart(2,'0')}`)
+    })
+  } catch (_) {}
+  if (!grid) return
+  grid.innerHTML = HORARIOS.map((h, i) => {
+    const indisponivel = ocupados.has(h)
+    return `
+      <div class="time-btn ${indisponivel ? 'unavailable' : ''}"
+           id="rtime-${i}"
+           onclick="selecionarHorarioReagendar(${i}, '${h}')">
+        ${h}
+      </div>
+    `
+  }).join('')
+}
+
+window.selecionarHorarioReagendar = (i, h) => {
+  const btn = document.getElementById(`rtime-${i}`)
+  if (!btn || btn.classList.contains('unavailable')) return
+  document.querySelectorAll('#reagendarTimesGrid .time-btn').forEach(b => b.classList.remove('selected'))
+  btn.classList.add('selected')
+  _reagendar.horario = h
+}
+
+window.confirmarReagendamento = async () => {
+  const msgEl = document.getElementById('reagendarMsg')
+  const btn   = document.getElementById('reagendarBtn')
+  if (!_reagendar.dia || !_reagendar.horario) {
+    msgEl.textContent   = 'Selecione a data e o horário.'
+    msgEl.style.display = 'block'
+    return
+  }
+  btn.textContent = 'Salvando...'
+  btn.disabled    = true
+  msgEl.style.display = 'none'
+  try {
+    const novoHorario = labelParaISO(_reagendar.dia, _reagendar.horario)
+    const { error } = await supabase
+      .from('agendamentos')
+      .update({ horario: novoHorario, status: 'confirmado' })
+      .eq('id', _reagendar.id)
+    if (error) throw new Error(error.message)
+    closeReagendarModal()
+    loadHistorico()
+  } catch (err) {
+    msgEl.textContent   = err.message || 'Erro ao reagendar. Tente novamente.'
+    msgEl.style.display = 'block'
+    btn.textContent = 'Confirmar novo horário'
+    btn.disabled    = false
+  }
 }
 
 // ─── INIT ────────────────────────────────────────────────
@@ -977,6 +1155,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('loginModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeLoginModal()
+  })
+
+  document.getElementById('reagendarModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeReagendarModal()
   })
 
   document.querySelectorAll('.nav-login-btn').forEach(btn => {

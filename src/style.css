@@ -1733,3 +1733,121 @@ body {
   .hero-sub { margin-top: 8px; font-size: 13px; }
   .hero-cta { margin-top: 14px; }
 }
+
+/* ─── ANIMAÇÕES PREMIUM ───────────────────────────────── */
+
+/* REVEAL ON SCROLL — fade + slide up */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.reveal-scale {
+  transform: scale(0.95) translate3d(0, 14px, 0);
+}
+.reveal-left {
+  transform: translate3d(-32px, 0, 0);
+}
+.reveal-right {
+  transform: translate3d(32px, 0, 0);
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+.reveal-scale.revealed {
+  transform: scale(1) translate3d(0, 0, 0);
+}
+
+/* Hero load-in: cascateia logo > badge > título > sub > CTA > scroll-hint */
+.hero-anim .hero-logo,
+.hero-anim .hero-badge,
+.hero-anim .hero-title,
+.hero-anim .hero-sub,
+.hero-anim .hero-cta,
+.hero-anim .scroll-hint {
+  opacity: 0;
+  animation: hero-rise 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.hero-anim .hero-logo  { animation-delay: 0.05s; }
+.hero-anim .hero-badge { animation-delay: 0.20s; }
+.hero-anim .hero-title { animation-delay: 0.32s; }
+.hero-anim .hero-sub   { animation-delay: 0.50s; }
+.hero-anim .hero-cta   { animation-delay: 0.65s; }
+.hero-anim .scroll-hint { animation: hero-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.85s forwards, scroll-bounce 2s ease-in-out 1.85s infinite; }
+
+@keyframes hero-rise {
+  from { opacity: 0; transform: translate3d(0, 24px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes scroll-bounce {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -6px, 0); }
+}
+
+/* Suporte a prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .hero-anim .hero-logo,
+  .hero-anim .hero-badge,
+  .hero-anim .hero-title,
+  .hero-anim .hero-sub,
+  .hero-anim .hero-cta,
+  .hero-anim .scroll-hint {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ─── RIPPLE EFFECT ──────────────────────────────────── */
+.ripple-host {
+  position: relative;
+  overflow: hidden;
+}
+.ripple-fx {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(0);
+  animation: ripple-expand 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+  z-index: 0;
+}
+.btn-primary .ripple-fx,
+.btn-confirm .ripple-fx,
+.btn-select  .ripple-fx,
+.btn-login-wall .ripple-fx {
+  background: rgba(0, 0, 0, 0.18);
+}
+@keyframes ripple-expand {
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+/* PRESS feedback — pequeno scale ao pressionar */
+.btn-primary:active,
+.btn-confirm:active,
+.btn-select:active,
+.btn-login-wall:active,
+.nav-login-btn:active,
+.btn-back:active {
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
+}
+
+/* Magnetic hover — buttons levemente "atraídos" para o cursor (CSS only fallback) */
+.btn-primary,
+.btn-confirm,
+.btn-select,
+.btn-login-wall {
+  transition: background 0.2s, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
+}
+

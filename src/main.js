@@ -15,6 +15,80 @@ function isPhone(str) {
   return !/\S+@\S+\.\S+/.test(str)
 }
 
+// ─── ANIMAÇÕES: REVEAL ON SCROLL ─────────────────────────
+const _revealIO = ('IntersectionObserver' in window)
+  ? new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed')
+          _revealIO.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' })
+  : null
+
+function reveal(el, delayMs = 0, variant = '') {
+  if (!el) return
+  el.classList.add('reveal')
+  if (variant) el.classList.add(variant)
+  if (delayMs) el.style.setProperty('--reveal-delay', `${delayMs}ms`)
+  if (_revealIO) _revealIO.observe(el)
+  else el.classList.add('revealed')
+}
+
+function revealStagger(selector, baseDelay = 70, variant = '', root = document) {
+  root.querySelectorAll(selector).forEach((el, i) => reveal(el, i * baseDelay, variant))
+}
+
+// ─── ANIMAÇÕES: RIPPLE EFFECT ────────────────────────────
+function attachGlobalRipple() {
+  const SELECTOR = '.btn-primary, .btn-confirm, .btn-select, .btn-login-wall, .nav-login-btn, .btn-back, .filial-header'
+  document.addEventListener('pointerdown', (e) => {
+    const target = e.target.closest(SELECTOR)
+    if (!target || target.disabled) return
+    target.classList.add('ripple-host')
+    const rect = target.getBoundingClientRect()
+    const size = Math.max(rect.width, rect.height) * 1.8
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const fx = document.createElement('span')
+    fx.className = 'ripple-fx'
+    fx.style.cssText = `width:${size}px;height:${size}px;left:${x - size/2}px;top:${y - size/2}px`
+    target.appendChild(fx)
+    setTimeout(() => fx.remove(), 700)
+  })
+}
+
+// ─── ANIMAÇÕES: MAGNETIC BUTTONS ─────────────────────────
+function attachMagneticEffect() {
+  if (window.matchMedia('(pointer: coarse)').matches) return // pula em touch
+  const SELECTOR = '.btn-primary, .btn-confirm'
+  const STRENGTH = 0.25
+  document.querySelectorAll(SELECTOR).forEach(btn => bindMagnetic(btn, STRENGTH))
+  // observer pra botões adicionados depois
+  const mo = new MutationObserver(muts => {
+    muts.forEach(m => m.addedNodes.forEach(node => {
+      if (node.nodeType !== 1) return
+      if (node.matches?.(SELECTOR)) bindMagnetic(node, STRENGTH)
+      node.querySelectorAll?.(SELECTOR).forEach(b => bindMagnetic(b, STRENGTH))
+    }))
+  })
+  mo.observe(document.body, { childList: true, subtree: true })
+}
+function bindMagnetic(btn, strength) {
+  if (btn._magnetic) return
+  btn._magnetic = true
+  btn.addEventListener('pointermove', (e) => {
+    const r = btn.getBoundingClientRect()
+    const dx = (e.clientX - (r.left + r.width / 2)) * strength
+    const dy = (e.clientY - (r.top + r.height / 2)) * strength
+    btn.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
+  })
+  btn.addEventListener('pointerleave', () => {
+    btn.style.transform = ''
+  })
+}
+
 // ─── STATE ───────────────────────────────────────────────
 let currentStep    = 0
 let isLoggedIn     = false
@@ -524,6 +598,16 @@ function goToStep(n) {
   window.scrollTo(0, 0)
   currentStep = n
   if (window.closeMobileMenu) window.closeMobileMenu()
+
+  // Trigger reveals para itens ainda não animados (caso step 1)
+  if (n === 1) {
+    requestAnimationFrame(() => {
+      const pendentes = document.querySelectorAll('#filiaisList .filial-item:not(.sk-card):not(.reveal)')
+      if (pendentes.length > 0) {
+        revealStagger('#filiaisList .filial-item:not(.sk-card):not(.reveal)', 90)
+      }
+    })
+  }
 }
 
 // ─── STEP 1: FILIAIS ─────────────────────────────────────
@@ -577,6 +661,9 @@ function renderFiliais() {
         </div>
       </div>
     `).join('')
+    if (currentStep === 1) {
+      revealStagger('#filiaisList .filial-item', 90)
+    }
   }, 600)
 }
 
@@ -689,6 +776,14 @@ function renderPerfil() {
       <div class="footer-sub">© 2025 Navalha City · Desenvolvido pela <a href="https://groven.netlify.app/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;opacity:0.7;">Groven</a></div>
     </footer>
   `
+
+  // Animações de entrada
+  reveal(document.querySelector('#profileContent .section-label'), 0)
+  reveal(document.querySelector('#profileContent .profile-photos-wrap'), 80, 'reveal-scale')
+  reveal(document.querySelector('#profileContent .barbers-label'), 180)
+  reveal(document.querySelector('#profileContent .barbers-title'), 240)
+  revealStagger('#profileContent .barber-card', 80)
+  reveal(document.querySelector('#profileContent .profile-desc'), 0, 'reveal-scale')
 }
 
 window.scrollPhotos = (dir) => {
@@ -782,6 +877,14 @@ function renderAgendamento() {
 
   renderDias()
   applyConfirmPhoneMask()
+
+  // Animações de entrada
+  reveal(document.querySelector('#scheduleContent .section-label'), 0)
+  reveal(document.querySelector('#scheduleContent .section-title'), 80)
+  revealStagger('#scheduleContent .schedule-context .context-chip', 60)
+  revealStagger('#scheduleContent .services-grid .service-item', 60)
+  reveal(document.querySelector('#scheduleContent .sched-block:last-of-type'), 0, 'reveal-scale')
+  reveal(document.getElementById('confirmSection'), 100, 'reveal-scale')
 }
 
 function renderConfirmSection() {
@@ -1142,6 +1245,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadSession()
 
   renderFiliais()
+
+  // ── Animações: hero + ripple + magnetic ──
+  document.querySelector('#step-0 .hero')?.classList.add('hero-anim')
+  attachGlobalRipple()
+  attachMagneticEffect()
 
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session && !isLoggedIn) {

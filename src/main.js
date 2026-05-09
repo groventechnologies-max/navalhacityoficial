@@ -374,12 +374,12 @@ async function curtainTransition(callback) {
   curtain.classList.remove('uncover')
   void curtain.offsetWidth
   curtain.classList.add('cover')
-  await wait(440) // cobertura (com stagger das 3 panels)
-  callback()
-  await wait(60)
+  await wait(580)        // painéis se encontram no meio + brand mark aparece
+  callback()             // troca o conteúdo enquanto está totalmente coberto
+  await wait(120)        // pequena pausa pra brand mark "respirar"
   curtain.classList.remove('cover')
   curtain.classList.add('uncover')
-  await wait(440)
+  await wait(580)        // painéis voltam pras bordas
   curtain.classList.remove('uncover')
   _curtainRunning = false
 }

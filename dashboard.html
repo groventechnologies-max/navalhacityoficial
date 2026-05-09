@@ -158,6 +158,124 @@
       .dash-hamburger { display: flex; }
     }
 
+    /* ── INPUTS DOS MODAIS ── */
+    .form-input-dash {
+      width: 100%;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      color: var(--white);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 14px; letter-spacing: 0.5px;
+      padding: 10px 14px;
+      border-radius: 2px; outline: none;
+      transition: border-color .2s;
+    }
+    .form-input-dash:focus { border-color: var(--orange-dim); }
+    .form-input-dash::placeholder { color: var(--muted); }
+
+    /* ── TABS DO DASHBOARD ── */
+    .dash-tabs {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dash-tab {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--muted); background: none; border: none;
+      padding: 12px 18px; cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    .dash-tab:hover { color: var(--white); }
+    .dash-tab.active { color: var(--white); border-bottom-color: var(--orange); }
+
+    .dash-tab-content { display: none; }
+    .dash-tab-content.active { display: block; }
+
+    /* ── HEADER ACTIONS (botões + Walk-in / + Bloquear) ── */
+    .dash-header-row {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .dash-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .dash-action-btn {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+      letter-spacing: 2px; text-transform: uppercase;
+      background: none; border: 1px solid var(--border);
+      padding: 9px 16px; border-radius: 2px; cursor: pointer;
+      color: var(--text); transition: color .2s, border-color .2s, background .2s;
+      white-space: nowrap;
+    }
+    .dash-action-btn.green   { color: var(--green);  border-color: rgba(46,204,113,.4); }
+    .dash-action-btn.green:hover  { background: rgba(46,204,113,.1); }
+    .dash-action-btn.yellow  { color: var(--yellow); border-color: rgba(243,156,18,.4); }
+    .dash-action-btn.yellow:hover { background: rgba(243,156,18,.1); }
+
+    .btn-action.editar { color: #aaa; border-color: var(--border); }
+    .btn-action.editar:hover { background: rgba(255,255,255,.06); color: var(--white); }
+
+    /* Bloqueios list */
+    .bloqueio-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 4px; padding: 14px 18px; margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .bloqueio-info { flex: 1; }
+    .bloqueio-titulo {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 14px;
+      color: var(--white); font-weight: 600; letter-spacing: 0.5px;
+    }
+    .bloqueio-sub {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+      color: var(--muted); margin-top: 3px;
+    }
+    .bloqueio-empty {
+      text-align: center; padding: 48px 24px;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px;
+      letter-spacing: 1px; color: var(--muted);
+    }
+
+    /* Relatórios */
+    .reports-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px; margin-bottom: 24px;
+    }
+    .report-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 4px; padding: 18px 20px;
+    }
+    .report-title {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
+      letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .report-row {
+      display: flex; justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px;
+    }
+    .report-row:last-child { border-bottom: none; }
+    .report-row .label { color: var(--text); }
+    .report-row .value { color: var(--white); font-weight: 700; font-size: 16px; }
+    .report-bar-row {
+      padding: 6px 0;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+    }
+    .report-bar-row .top {
+      display: flex; justify-content: space-between;
+      color: var(--text); margin-bottom: 4px;
+    }
+    .report-bar-row .top .name { color: var(--white); }
+    .report-bar-row .bar {
+      width: 100%; height: 4px; background: var(--border);
+      border-radius: 2px; overflow: hidden;
+    }
+    .report-bar-row .bar-fill {
+      height: 100%; background: var(--white);
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
     /* ── PAGE TRANSITION CURTAIN ── */
     #curtain {
       position: fixed; inset: 0; z-index: 9000; pointer-events: none; overflow: hidden;
@@ -486,6 +604,111 @@
 
   <div id="loadingScreen">Carregando...</div>
 
+  <!-- MODAL DE WALK-IN (atendimento sem agendamento prévio) -->
+  <div class="confirm-overlay" id="walkinModal">
+    <div class="confirm-box" style="max-width:480px;text-align:left;padding:28px 24px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--white);letter-spacing:3px;margin-bottom:16px">Novo Atendimento</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px">Cliente que chegou agora</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <input class="form-input-dash" id="wiNome"   placeholder="Nome do cliente">
+        <input class="form-input-dash" id="wiTel"    placeholder="WhatsApp" maxlength="15">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <select class="form-input-dash" id="wiServico"></select>
+        <input  class="form-input-dash" id="wiPreco" placeholder="R$ 45">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <select class="form-input-dash" id="wiFilial"></select>
+        <select class="form-input-dash" id="wiBarbeiro"></select>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Horário</label>
+        <input class="form-input-dash" type="datetime-local" id="wiHorario" style="margin-top:4px">
+      </div>
+      <div id="walkinMsg" style="display:none;color:var(--red);font-family:'Barlow Condensed',sans-serif;font-size:13px;margin-bottom:10px"></div>
+      <div class="confirm-box-actions" style="margin-top:8px">
+        <button class="confirm-box-btn-cancel" onclick="closeWalkinModal()">Cancelar</button>
+        <button class="confirm-box-btn-ok" id="walkinBtn" style="color:var(--green);border-color:rgba(46,204,113,.5)" onclick="submitWalkin()">Registrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE EDIÇÃO DE AGENDAMENTO -->
+  <div class="confirm-overlay" id="editModal">
+    <div class="confirm-box" style="max-width:480px;text-align:left;padding:28px 24px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--white);letter-spacing:3px;margin-bottom:16px">Editar Agendamento</div>
+      <input type="hidden" id="editId">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <input class="form-input-dash" id="editNome" placeholder="Nome do cliente">
+        <input class="form-input-dash" id="editTel"  placeholder="WhatsApp" maxlength="15">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <select class="form-input-dash" id="editServico"></select>
+        <input  class="form-input-dash" id="editPreco" placeholder="R$ 45">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <select class="form-input-dash" id="editFilial"></select>
+        <select class="form-input-dash" id="editBarbeiro"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <select class="form-input-dash" id="editStatus">
+          <option value="confirmado">Confirmado</option>
+          <option value="pendente">Pendente</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <input class="form-input-dash" type="datetime-local" id="editHorario">
+      </div>
+      <div id="editMsg" style="display:none;color:var(--red);font-family:'Barlow Condensed',sans-serif;font-size:13px;margin-bottom:10px"></div>
+      <div class="confirm-box-actions" style="margin-top:8px">
+        <button class="confirm-box-btn-cancel" onclick="closeEditModal()">Cancelar</button>
+        <button class="confirm-box-btn-ok" id="editBtn" style="color:var(--white);border-color:var(--orange-dim)" onclick="submitEdit()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE BLOQUEIO/FOLGA -->
+  <div class="confirm-overlay" id="bloqueioModal">
+    <div class="confirm-box" style="max-width:460px;text-align:left;padding:28px 24px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--white);letter-spacing:3px;margin-bottom:8px">Bloquear Horário</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:16px">Folga, feriado, evento ou indisponibilidade</div>
+      <div style="margin-bottom:10px" id="blqAlcanceWrap">
+        <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Alcance</label>
+        <select class="form-input-dash" id="blqAlcance" style="margin-top:4px">
+          <option value="self">Só eu</option>
+          <option value="filial">Toda a filial</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px" id="blqBarbeiroWrap" style="display:none">
+        <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Barbeiro</label>
+        <select class="form-input-dash" id="blqBarbeiro" style="margin-top:4px"></select>
+      </div>
+      <div style="margin-bottom:10px" id="blqFilialWrap">
+        <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Filial</label>
+        <select class="form-input-dash" id="blqFilial" style="margin-top:4px"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Início</label>
+          <input class="form-input-dash" type="datetime-local" id="blqInicio" style="margin-top:4px">
+        </div>
+        <div>
+          <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Fim</label>
+          <input class="form-input-dash" type="datetime-local" id="blqFim" style="margin-top:4px">
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Motivo (opcional)</label>
+        <input class="form-input-dash" id="blqMotivo" placeholder="Ex: férias, médico, feriado" style="margin-top:4px">
+      </div>
+      <div id="bloqueioMsg" style="display:none;color:var(--red);font-family:'Barlow Condensed',sans-serif;font-size:13px;margin-bottom:10px"></div>
+      <div class="confirm-box-actions" style="margin-top:8px">
+        <button class="confirm-box-btn-cancel" onclick="closeBloqueioModal()">Cancelar</button>
+        <button class="confirm-box-btn-ok" id="bloqueioBtn" style="color:var(--yellow);border-color:rgba(243,156,18,.5)" onclick="submitBloqueio()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL DE CONFIRMAÇÃO DE AÇÃO -->
   <div class="confirm-overlay" id="actionModal">
     <div class="confirm-box">
@@ -507,12 +730,26 @@
   </div>
 
   <div id="dashContent">
-    <div class="dash-header">
-      <div class="dash-title" id="dashTitle">Dashboard</div>
-      <div class="dash-subtitle" id="dashSubtitle"></div>
-      <div class="dash-welcome-mobile" id="dashWelcomeMobile"></div>
+    <div class="dash-header-row">
+      <div class="dash-header">
+        <div class="dash-title" id="dashTitle">Dashboard</div>
+        <div class="dash-subtitle" id="dashSubtitle"></div>
+        <div class="dash-welcome-mobile" id="dashWelcomeMobile"></div>
+      </div>
+      <div class="dash-header-actions">
+        <button class="dash-action-btn green"  onclick="openWalkinModal()">+ Atendimento</button>
+        <button class="dash-action-btn yellow" onclick="openBloqueioModal()">+ Bloqueio</button>
+      </div>
     </div>
 
+    <div class="dash-tabs">
+      <button class="dash-tab active" data-tab="agendamentos" onclick="setTab('agendamentos')">Agendamentos</button>
+      <button class="dash-tab"        data-tab="bloqueios"    onclick="setTab('bloqueios')">Folgas / Bloqueios</button>
+      <button class="dash-tab"        data-tab="relatorios"   onclick="setTab('relatorios')">Relatórios</button>
+    </div>
+
+    <!-- ── TAB: AGENDAMENTOS (default) ── -->
+    <div class="dash-tab-content active" data-tab="agendamentos">
     <div class="dash-filters">
       <!-- Toggle modo -->
       <div class="view-toggle">
@@ -561,6 +798,35 @@
         </thead>
         <tbody id="dashTableBody"></tbody>
       </table>
+    </div>
+    </div>
+    <!-- /tab agendamentos -->
+
+    <!-- ── TAB: BLOQUEIOS ── -->
+    <div class="dash-tab-content" data-tab="bloqueios">
+      <div class="dash-filters">
+        <select class="filter-select" id="blqFilterEscopo">
+          <option value="ativos">Ativos & futuros</option>
+          <option value="todos">Todos</option>
+          <option value="passados">Já passaram</option>
+        </select>
+      </div>
+      <div id="bloqueiosList"></div>
+    </div>
+
+    <!-- ── TAB: RELATÓRIOS ── -->
+    <div class="dash-tab-content" data-tab="relatorios">
+      <div class="dash-filters">
+        <select class="filter-select" id="relPeriodo" onchange="loadRelatorios()">
+          <option value="30">Últimos 30 dias</option>
+          <option value="7">Últimos 7 dias</option>
+          <option value="90">Últimos 90 dias</option>
+          <option value="365">Último ano</option>
+        </select>
+      </div>
+      <div id="relatoriosContent" style="font-family:'Barlow Condensed',sans-serif;color:var(--muted);text-align:center;padding:48px">
+        Selecione um período para carregar.
+      </div>
     </div>
   </div>
 
@@ -803,6 +1069,11 @@
           <td data-label="Ações">
             <div class="td-actions">
               <button
+                class="btn-action editar"
+                onclick="openEditModal('${row.id}')">
+                Editar
+              </button>
+              <button
                 class="btn-action cancelar"
                 onclick="promptAcao('cancelar', '${row.id}', '${esc(cliente)}')"
                 ${isCancelado ? 'disabled title="Já cancelado"' : ''}>
@@ -922,6 +1193,522 @@
     // Fecha o modal ao clicar fora
     document.getElementById('actionModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeActionModal()
+    })
+
+    // ─── TABS ──────────────────────────────────────────────
+    window.setTab = (tab) => {
+      document.querySelectorAll('.dash-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab))
+      document.querySelectorAll('.dash-tab-content').forEach(c => c.classList.toggle('active', c.dataset.tab === tab))
+      if (tab === 'bloqueios')   loadBloqueios()
+      if (tab === 'relatorios') loadRelatorios()
+    }
+
+    // ─── HELPERS DE DROPDOWNS ─────────────────────────────
+    function preencherSelect(el, items, includeEmpty = false, emptyLabel = '— Selecione —') {
+      el.innerHTML = (includeEmpty ? `<option value="">${emptyLabel}</option>` : '') +
+        items.map(i => `<option value="${i.value}">${i.label}</option>`).join('')
+    }
+
+    const SERVICOS = [
+      { value: 'Corte de cabelo', label: 'Corte de cabelo', preco: 'R$ 45' },
+      { value: 'Barba completa',  label: 'Barba completa',  preco: 'R$ 35' },
+      { value: 'Corte + Barba',   label: 'Corte + Barba',   preco: 'R$ 70' },
+      { value: 'Navalhado',       label: 'Navalhado',       preco: 'R$ 50' },
+      { value: 'Hidratação',      label: 'Hidratação',      preco: 'R$ 40' },
+      { value: 'Coloração',       label: 'Coloração',       preco: 'R$ 80' },
+    ]
+
+    let _equipeCache = []
+    async function carregarEquipe() {
+      if (_equipeCache.length > 0) return _equipeCache
+      const { data } = await supabase
+        .from('equipe')
+        .select('id, nome, filial_id, status')
+        .eq('status', 'ativo')
+      _equipeCache = data || []
+      return _equipeCache
+    }
+
+    function nowLocalISO(d = new Date()) {
+      const tzOffset = d.getTimezoneOffset() * 60000
+      return new Date(d - tzOffset).toISOString().slice(0, 16)
+    }
+
+    // ─── WALK-IN ──────────────────────────────────────────
+    window.openWalkinModal = async () => {
+      document.getElementById('walkinMsg').style.display = 'none'
+      document.getElementById('wiNome').value = ''
+      document.getElementById('wiTel').value = ''
+      preencherSelect(document.getElementById('wiServico'), SERVICOS)
+      const svc = SERVICOS[0]
+      document.getElementById('wiPreco').value = svc.preco
+      document.getElementById('wiServico').onchange = (e) => {
+        const s = SERVICOS.find(x => x.value === e.target.value)
+        if (s) document.getElementById('wiPreco').value = s.preco
+      }
+      const filiaisDisponiveis = currentProfile.role === 'admin'
+        ? Object.entries(FILIAIS).map(([id, nome]) => ({ value: id, label: nome }))
+        : [{ value: String(currentProfile.filial_id), label: FILIAIS[currentProfile.filial_id] }]
+      preencherSelect(document.getElementById('wiFilial'), filiaisDisponiveis)
+
+      const equipe = await carregarEquipe()
+      const updateBarbeiros = () => {
+        const filId = parseInt(document.getElementById('wiFilial').value)
+        let opts = equipe.filter(m => m.filial_id === filId).map(m => ({ value: m.nome, label: m.nome }))
+        if (currentProfile.role === 'barbeiro') {
+          opts = [{ value: currentProfile.nome, label: currentProfile.nome }]
+        }
+        preencherSelect(document.getElementById('wiBarbeiro'), opts.length ? opts : [{ value: '', label: 'Nenhum barbeiro ativo' }])
+      }
+      document.getElementById('wiFilial').onchange = updateBarbeiros
+      updateBarbeiros()
+
+      document.getElementById('wiHorario').value = nowLocalISO()
+      document.getElementById('walkinModal').classList.add('open')
+    }
+
+    window.closeWalkinModal = () => document.getElementById('walkinModal').classList.remove('open')
+
+    window.submitWalkin = async () => {
+      const nome    = document.getElementById('wiNome').value.trim()
+      const tel     = document.getElementById('wiTel').value.trim()
+      const servico = document.getElementById('wiServico').value
+      const preco   = document.getElementById('wiPreco').value.trim()
+      const filial  = parseInt(document.getElementById('wiFilial').value)
+      const barbeiro = document.getElementById('wiBarbeiro').value
+      const horario = document.getElementById('wiHorario').value
+      const msg = document.getElementById('walkinMsg')
+      const btn = document.getElementById('walkinBtn')
+      msg.style.display = 'none'
+      if (!nome || !servico || !preco || !filial || !barbeiro || !horario) {
+        msg.textContent = 'Preencha todos os campos obrigatórios.'
+        msg.style.display = 'block'
+        return
+      }
+      btn.textContent = 'Salvando...'
+      btn.disabled = true
+      try {
+        const { error } = await supabase.from('agendamentos').insert({
+          cliente_id:   currentUser.id,
+          cliente_nome: nome,
+          cliente_tel:  tel || null,
+          filial_id:    filial,
+          barbeiro,
+          servico,
+          preco,
+          horario:      new Date(horario).toISOString(),
+          observacoes:  'Walk-in (registrado pelo dashboard)',
+          status:       'confirmado',
+        })
+        if (error) throw new Error(error.message)
+        closeWalkinModal()
+        await loadDash()
+      } catch (e) {
+        msg.textContent = e.message || 'Erro ao registrar.'
+        msg.style.display = 'block'
+      } finally {
+        btn.textContent = 'Registrar'
+        btn.disabled = false
+      }
+    }
+
+    // ─── EDITAR AGENDAMENTO ───────────────────────────────
+    let _editRow = null
+    window.openEditModal = async (id) => {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select('id, cliente_nome, cliente_tel, servico, preco, horario, status, filial_id, barbeiro')
+        .eq('id', id)
+        .single()
+      if (error || !data) return alert('Erro ao carregar agendamento.')
+      _editRow = data
+      document.getElementById('editId').value   = data.id
+      document.getElementById('editNome').value = data.cliente_nome || ''
+      document.getElementById('editTel').value  = data.cliente_tel || ''
+      document.getElementById('editPreco').value = data.preco || ''
+      preencherSelect(document.getElementById('editServico'), SERVICOS)
+      document.getElementById('editServico').value = data.servico
+      document.getElementById('editServico').onchange = (e) => {
+        const s = SERVICOS.find(x => x.value === e.target.value)
+        if (s) document.getElementById('editPreco').value = s.preco
+      }
+      preencherSelect(document.getElementById('editFilial'),
+        Object.entries(FILIAIS).map(([id, nome]) => ({ value: id, label: nome })))
+      document.getElementById('editFilial').value = String(data.filial_id)
+
+      const equipe = await carregarEquipe()
+      const updateBarbeirosEdit = () => {
+        const filId = parseInt(document.getElementById('editFilial').value)
+        const opts = equipe.filter(m => m.filial_id === filId).map(m => ({ value: m.nome, label: m.nome }))
+        preencherSelect(document.getElementById('editBarbeiro'), opts.length ? opts : [{ value: data.barbeiro, label: data.barbeiro }])
+        document.getElementById('editBarbeiro').value = data.barbeiro
+      }
+      document.getElementById('editFilial').onchange = updateBarbeirosEdit
+      updateBarbeirosEdit()
+
+      document.getElementById('editStatus').value = data.status
+      document.getElementById('editHorario').value = nowLocalISO(new Date(data.horario))
+      document.getElementById('editMsg').style.display = 'none'
+      document.getElementById('editModal').classList.add('open')
+    }
+    window.closeEditModal = () => document.getElementById('editModal').classList.remove('open')
+
+    window.submitEdit = async () => {
+      const id      = document.getElementById('editId').value
+      const nome    = document.getElementById('editNome').value.trim()
+      const tel     = document.getElementById('editTel').value.trim()
+      const servico = document.getElementById('editServico').value
+      const preco   = document.getElementById('editPreco').value.trim()
+      const filial  = parseInt(document.getElementById('editFilial').value)
+      const barbeiro= document.getElementById('editBarbeiro').value
+      const status  = document.getElementById('editStatus').value
+      const horario = document.getElementById('editHorario').value
+      const msg = document.getElementById('editMsg')
+      const btn = document.getElementById('editBtn')
+      msg.style.display = 'none'
+      if (!nome || !servico || !filial || !barbeiro || !horario) {
+        msg.textContent = 'Preencha todos os campos obrigatórios.'
+        msg.style.display = 'block'
+        return
+      }
+      btn.textContent = 'Salvando...'
+      btn.disabled = true
+      try {
+        const { error } = await supabase.from('agendamentos').update({
+          cliente_nome: nome,
+          cliente_tel:  tel || null,
+          servico,
+          preco,
+          filial_id:    filial,
+          barbeiro,
+          status,
+          horario:      new Date(horario).toISOString(),
+        }).eq('id', id)
+        if (error) throw new Error(error.message)
+        closeEditModal()
+        await loadDash()
+      } catch (e) {
+        msg.textContent = e.message || 'Erro ao salvar.'
+        msg.style.display = 'block'
+      } finally {
+        btn.textContent = 'Salvar'
+        btn.disabled = false
+      }
+    }
+
+    // ─── BLOQUEIOS / FOLGAS ────────────────────────────────
+    window.openBloqueioModal = async () => {
+      document.getElementById('bloqueioMsg').style.display = 'none'
+      const role = currentProfile.role
+      const alcanceSel = document.getElementById('blqAlcance')
+      // Admin/gerente podem bloquear filial inteira; barbeiro só ele mesmo
+      if (role === 'barbeiro') {
+        alcanceSel.innerHTML = `<option value="self">Só eu</option>`
+        alcanceSel.value = 'self'
+      } else {
+        alcanceSel.innerHTML = `<option value="self">Só um barbeiro</option><option value="filial">Toda a filial</option>`
+      }
+
+      // Filiais
+      const filiais = role === 'admin'
+        ? Object.entries(FILIAIS).map(([id, nome]) => ({ value: id, label: nome }))
+        : [{ value: String(currentProfile.filial_id), label: FILIAIS[currentProfile.filial_id] }]
+      preencherSelect(document.getElementById('blqFilial'), filiais)
+
+      // Barbeiros
+      const equipe = await carregarEquipe()
+      const updateBlqBarbeiros = () => {
+        const filId = parseInt(document.getElementById('blqFilial').value)
+        const opts = equipe.filter(m => m.filial_id === filId).map(m => ({ value: m.nome, label: m.nome }))
+        preencherSelect(document.getElementById('blqBarbeiro'),
+          role === 'barbeiro' ? [{ value: currentProfile.nome, label: currentProfile.nome }] :
+          (opts.length ? opts : [{ value: '', label: 'Nenhum barbeiro ativo' }]))
+      }
+      document.getElementById('blqFilial').onchange = updateBlqBarbeiros
+      updateBlqBarbeiros()
+
+      const updateBarbeiroVisibility = () => {
+        const isFilial = alcanceSel.value === 'filial'
+        document.getElementById('blqBarbeiroWrap').style.display = isFilial ? 'none' : ''
+      }
+      alcanceSel.onchange = updateBarbeiroVisibility
+      updateBarbeiroVisibility()
+
+      const now = new Date()
+      const inicio = new Date(now); inicio.setHours(now.getHours() + 1, 0, 0, 0)
+      const fim    = new Date(inicio); fim.setHours(inicio.getHours() + 1)
+      document.getElementById('blqInicio').value = nowLocalISO(inicio)
+      document.getElementById('blqFim').value    = nowLocalISO(fim)
+      document.getElementById('blqMotivo').value = ''
+      document.getElementById('bloqueioModal').classList.add('open')
+    }
+    window.closeBloqueioModal = () => document.getElementById('bloqueioModal').classList.remove('open')
+
+    window.submitBloqueio = async () => {
+      const alcance = document.getElementById('blqAlcance').value
+      const filial  = parseInt(document.getElementById('blqFilial').value)
+      const barbeiro = alcance === 'filial' ? null : document.getElementById('blqBarbeiro').value
+      const inicio  = document.getElementById('blqInicio').value
+      const fim     = document.getElementById('blqFim').value
+      const motivo  = document.getElementById('blqMotivo').value.trim() || null
+      const msg = document.getElementById('bloqueioMsg')
+      const btn = document.getElementById('bloqueioBtn')
+      msg.style.display = 'none'
+      if (!filial || !inicio || !fim) {
+        msg.textContent = 'Preencha filial, início e fim.'
+        msg.style.display = 'block'
+        return
+      }
+      if (new Date(fim) <= new Date(inicio)) {
+        msg.textContent = 'O fim precisa ser depois do início.'
+        msg.style.display = 'block'
+        return
+      }
+      btn.textContent = 'Salvando...'
+      btn.disabled = true
+      try {
+        const { error } = await supabase.from('bloqueios').insert({
+          filial_id: filial,
+          barbeiro,
+          inicio:    new Date(inicio).toISOString(),
+          fim:       new Date(fim).toISOString(),
+          motivo,
+          created_by: currentUser.id,
+        })
+        if (error) throw new Error(error.message)
+        closeBloqueioModal()
+        await loadBloqueios()
+        setTab('bloqueios')
+      } catch (e) {
+        msg.textContent = e.message || 'Erro ao salvar bloqueio.'
+        msg.style.display = 'block'
+      } finally {
+        btn.textContent = 'Salvar'
+        btn.disabled = false
+      }
+    }
+
+    window.loadBloqueios = async () => {
+      const list = document.getElementById('bloqueiosList')
+      list.innerHTML = `<div class="bloqueio-empty">Carregando...</div>`
+      const escopo = document.getElementById('blqFilterEscopo')?.value || 'ativos'
+
+      let query = supabase
+        .from('bloqueios')
+        .select('id, barbeiro, filial_id, inicio, fim, motivo, created_by')
+        .order('inicio', { ascending: false })
+
+      if (currentProfile.role === 'gerente') {
+        query = query.eq('filial_id', currentProfile.filial_id)
+      } else if (currentProfile.role === 'barbeiro') {
+        query = query.or(`barbeiro.eq.${currentProfile.nome},barbeiro.is.null`)
+        query = query.eq('filial_id', currentProfile.filial_id)
+      }
+
+      const { data, error } = await query
+      if (error) {
+        list.innerHTML = `<div class="bloqueio-empty">Erro ao carregar bloqueios.</div>`
+        return
+      }
+
+      const now = new Date()
+      let filtrados = data || []
+      if (escopo === 'ativos')   filtrados = filtrados.filter(b => new Date(b.fim) >= now)
+      if (escopo === 'passados') filtrados = filtrados.filter(b => new Date(b.fim) < now)
+
+      if (!filtrados.length) {
+        list.innerHTML = `<div class="bloqueio-empty">Nenhum bloqueio neste filtro.</div>`
+        return
+      }
+
+      list.innerHTML = filtrados.map(b => {
+        const inicio = new Date(b.inicio)
+        const fim    = new Date(b.fim)
+        const fmtDT  = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+        const filNm  = FILIAIS[b.filial_id] || `Unidade ${b.filial_id}`
+        const escopoTxt = b.barbeiro ? `Barbeiro: ${b.barbeiro}` : 'Toda a filial'
+        const ativo = fim >= now
+        const podeApagar = currentProfile.role === 'admin' ||
+                           (currentProfile.role === 'gerente' && b.filial_id === currentProfile.filial_id) ||
+                           (currentProfile.role === 'barbeiro' && b.created_by === currentUser.id)
+        return `
+          <div class="bloqueio-card">
+            <div class="bloqueio-info">
+              <div class="bloqueio-titulo">${escopoTxt} · ${esc(filNm)}${ativo ? '' : ' <span style="color:var(--muted);font-size:11px">(passado)</span>'}</div>
+              <div class="bloqueio-sub">${fmtDT(inicio)} → ${fmtDT(fim)}${b.motivo ? ` · ${esc(b.motivo)}` : ''}</div>
+            </div>
+            ${podeApagar ? `<button class="btn-action apagar" onclick="apagarBloqueio('${b.id}')">Remover</button>` : ''}
+          </div>
+        `
+      }).join('')
+    }
+
+    window.apagarBloqueio = async (id) => {
+      if (!confirm('Remover este bloqueio?')) return
+      const { error } = await supabase.from('bloqueios').delete().eq('id', id)
+      if (error) return alert('Erro: ' + error.message)
+      loadBloqueios()
+    }
+
+    document.getElementById('blqFilterEscopo')?.addEventListener('change', loadBloqueios)
+
+    // ─── RELATÓRIOS ───────────────────────────────────────
+    window.loadRelatorios = async () => {
+      const container = document.getElementById('relatoriosContent')
+      container.innerHTML = `<div style="font-family:'Barlow Condensed',sans-serif;color:var(--muted);text-align:center;padding:48px">Carregando...</div>`
+
+      const dias = parseInt(document.getElementById('relPeriodo').value || '30')
+      const fim    = new Date()
+      const inicio = new Date(); inicio.setDate(inicio.getDate() - dias)
+
+      let query = supabase
+        .from('agendamentos')
+        .select('id, horario, servico, barbeiro, preco, status, filial_id')
+        .gte('horario', inicio.toISOString())
+        .lte('horario', fim.toISOString())
+
+      if (currentProfile.role === 'gerente') {
+        query = query.eq('filial_id', currentProfile.filial_id)
+      } else if (currentProfile.role === 'barbeiro') {
+        query = query.eq('barbeiro', currentProfile.nome)
+      }
+
+      const { data, error } = await query
+      if (error) {
+        container.innerHTML = `<div style="color:var(--red);padding:32px;text-align:center">Erro ao carregar dados.</div>`
+        return
+      }
+
+      const total       = data.length
+      const confirmados = data.filter(r => r.status === 'confirmado').length
+      const cancelados  = data.filter(r => r.status === 'cancelado').length
+      const taxaCancel  = total > 0 ? (cancelados / total * 100).toFixed(1) : 0
+      const receita     = data.filter(r => r.status === 'confirmado')
+        .reduce((s, r) => s + (parseFloat((r.preco || '').replace(/[^\d,]/g,'').replace(',','.')) || 0), 0)
+
+      // Agrupa por barbeiro (admin/gerente vê ranking; barbeiro só o dele)
+      const porBarbeiro = {}
+      data.forEach(r => {
+        if (r.status !== 'confirmado') return
+        const v = parseFloat((r.preco || '').replace(/[^\d,]/g,'').replace(',','.')) || 0
+        if (!porBarbeiro[r.barbeiro]) porBarbeiro[r.barbeiro] = { count: 0, receita: 0 }
+        porBarbeiro[r.barbeiro].count++
+        porBarbeiro[r.barbeiro].receita += v
+      })
+      const rankingBarbeiros = Object.entries(porBarbeiro)
+        .sort((a, b) => b[1].receita - a[1].receita)
+
+      // Agrupa por filial (só admin)
+      const porFilial = {}
+      if (currentProfile.role === 'admin') {
+        data.forEach(r => {
+          if (r.status !== 'confirmado') return
+          const v = parseFloat((r.preco || '').replace(/[^\d,]/g,'').replace(',','.')) || 0
+          if (!porFilial[r.filial_id]) porFilial[r.filial_id] = { count: 0, receita: 0 }
+          porFilial[r.filial_id].count++
+          porFilial[r.filial_id].receita += v
+        })
+      }
+      const rankingFiliais = Object.entries(porFilial)
+        .sort((a, b) => b[1].receita - a[1].receita)
+
+      // Horário mais cheio
+      const porHora = {}
+      data.forEach(r => {
+        const h = new Date(r.horario).getHours()
+        porHora[h] = (porHora[h] || 0) + 1
+      })
+      const horasOrdenadas = Object.entries(porHora).sort((a, b) => b[1] - a[1])
+      const horarioPico = horasOrdenadas[0] ? `${String(horasOrdenadas[0][0]).padStart(2,'0')}h` : '—'
+
+      // Serviço mais vendido
+      const porServico = {}
+      data.forEach(r => {
+        if (r.status !== 'confirmado') return
+        porServico[r.servico] = (porServico[r.servico] || 0) + 1
+      })
+      const servicosOrdenados = Object.entries(porServico).sort((a, b) => b[1] - a[1])
+      const servicoTop = servicosOrdenados[0] ? servicosOrdenados[0][0] : '—'
+
+      const fmtBRL = (v) => 'R$ ' + v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+      const maxBarbeiro = rankingBarbeiros[0]?.[1].receita || 1
+      const maxFilial   = rankingFiliais[0]?.[1].receita || 1
+
+      container.innerHTML = `
+        <div class="reports-grid">
+          <div class="report-card">
+            <div class="report-title">Visão geral</div>
+            <div class="report-row"><span class="label">Total de atendimentos</span><span class="value">${total}</span></div>
+            <div class="report-row"><span class="label">Confirmados</span><span class="value" style="color:var(--green)">${confirmados}</span></div>
+            <div class="report-row"><span class="label">Cancelados</span><span class="value" style="color:var(--red)">${cancelados}</span></div>
+            <div class="report-row"><span class="label">Taxa de cancelamento</span><span class="value">${taxaCancel}%</span></div>
+            <div class="report-row"><span class="label">Receita confirmada</span><span class="value" style="color:var(--green)">${fmtBRL(receita)}</span></div>
+          </div>
+
+          <div class="report-card">
+            <div class="report-title">Destaques</div>
+            <div class="report-row"><span class="label">Horário de pico</span><span class="value">${horarioPico}</span></div>
+            <div class="report-row"><span class="label">Serviço mais vendido</span><span class="value" style="font-size:14px">${esc(servicoTop)}</span></div>
+            <div class="report-row"><span class="label">Atendimentos/dia (média)</span><span class="value">${(total / dias).toFixed(1)}</span></div>
+          </div>
+
+          ${currentProfile.role === 'admin' ? `
+          <div class="report-card" style="grid-column: 1 / -1">
+            <div class="report-title">Receita por unidade</div>
+            ${rankingFiliais.length === 0 ? '<div style="color:var(--muted);padding:16px 0">Sem dados.</div>' :
+              rankingFiliais.map(([id, d]) => `
+                <div class="report-bar-row">
+                  <div class="top">
+                    <span class="name">${esc(FILIAIS[id] || `Unidade ${id}`)}</span>
+                    <span>${fmtBRL(d.receita)} · ${d.count} atendimentos</span>
+                  </div>
+                  <div class="bar"><div class="bar-fill" style="width:${(d.receita / maxFilial * 100).toFixed(1)}%"></div></div>
+                </div>
+              `).join('')}
+          </div>` : ''}
+
+          ${currentProfile.role !== 'barbeiro' ? `
+          <div class="report-card" style="grid-column: 1 / -1">
+            <div class="report-title">${currentProfile.role === 'admin' ? 'Top barbeiros' : 'Barbeiros da unidade'}</div>
+            ${rankingBarbeiros.length === 0 ? '<div style="color:var(--muted);padding:16px 0">Sem dados.</div>' :
+              rankingBarbeiros.map(([nome, d]) => `
+                <div class="report-bar-row">
+                  <div class="top">
+                    <span class="name">${esc(nome)}</span>
+                    <span>${fmtBRL(d.receita)} · ${d.count} atendimentos</span>
+                  </div>
+                  <div class="bar"><div class="bar-fill" style="width:${(d.receita / maxBarbeiro * 100).toFixed(1)}%"></div></div>
+                </div>
+              `).join('')}
+          </div>` : `
+          <div class="report-card" style="grid-column: 1 / -1">
+            <div class="report-title">Seu desempenho</div>
+            <div class="report-row"><span class="label">Atendimentos</span><span class="value">${confirmados}</span></div>
+            <div class="report-row"><span class="label">Receita gerada</span><span class="value" style="color:var(--green)">${fmtBRL(receita)}</span></div>
+            <div class="report-row"><span class="label">Ticket médio</span><span class="value">${confirmados > 0 ? fmtBRL(receita / confirmados) : 'R$ 0'}</span></div>
+          </div>`}
+        </div>
+      `
+    }
+
+    // Máscara de telefone nos campos de modal
+    ['wiTel', 'editTel'].forEach(id => {
+      const el = document.getElementById(id)
+      if (!el) return
+      el.addEventListener('input', () => {
+        let v = el.value.replace(/\D/g,'').slice(0,11)
+        if (v.length <= 10) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3')
+        else                v = v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3')
+        el.value = v.replace(/-$/,'')
+      })
+    })
+
+    // Fechar modais ao clicar fora
+    ;['walkinModal', 'editModal', 'bloqueioModal'].forEach(id => {
+      document.getElementById(id).addEventListener('click', e => {
+        if (e.target === e.currentTarget) document.getElementById(id).classList.remove('open')
+      })
     })
 
     window.dashLogout = async () => {

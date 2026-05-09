@@ -1334,37 +1334,60 @@ async function renderHorarios(label) {
   const timesGrid = document.getElementById('timesGrid')
   const availText = document.getElementById('availText')
 
-  let ocupados = new Set()
+  let ocupados  = new Set()
+  let bloqueios = []
+  let dataInicio, dataFim, dia, mes, ano
+
   try {
     const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
     const partes = label.split(' ')[1].split('/')
-    const dia    = parseInt(partes[0])
-    const mes    = meses[partes[1]]
-    const ano    = new Date().getFullYear()
-    const dataInicio = new Date(ano, mes, dia, 0, 0, 0).toISOString()
-    const dataFim    = new Date(ano, mes, dia, 23, 59, 59).toISOString()
+    dia    = parseInt(partes[0])
+    mes    = meses[partes[1]]
+    ano    = new Date().getFullYear()
+    dataInicio = new Date(ano, mes, dia, 0, 0, 0).toISOString()
+    dataFim    = new Date(ano, mes, dia, 23, 59, 59).toISOString()
 
-    const { data } = await supabase
-      .from('agendamentos')
-      .select('horario')
-      .eq('filial_id',   state.filial.id)
-      .eq('barbeiro',    state.barbeiro.nome)
-      .gte('horario',    dataInicio)
-      .lte('horario',    dataFim)
-      .in('status',      ['confirmado', 'pendente'])
+    const [agRes, blqRes] = await Promise.all([
+      supabase
+        .from('agendamentos')
+        .select('horario')
+        .eq('filial_id',   state.filial.id)
+        .eq('barbeiro',    state.barbeiro.nome)
+        .gte('horario',    dataInicio)
+        .lte('horario',    dataFim)
+        .in('status',      ['confirmado', 'pendente']),
+      supabase
+        .from('bloqueios')
+        .select('barbeiro, inicio, fim')
+        .eq('filial_id', state.filial.id)
+        .or(`barbeiro.eq.${state.barbeiro.nome},barbeiro.is.null`)
+        .lte('inicio', dataFim)
+        .gte('fim',    dataInicio),
+    ])
 
-    if (data) data.forEach(row => {
+    if (agRes.data) agRes.data.forEach(row => {
       const h = new Date(row.horario)
       ocupados.add(`${String(h.getHours()).padStart(2,'0')}:${String(h.getMinutes()).padStart(2,'0')}`)
     })
+    if (blqRes.data) bloqueios = blqRes.data
   } catch (_) {}
 
-  const disponiveis = HORARIOS.filter(h => !ocupados.has(h)).length
+  function horarioBloqueado(h) {
+    if (!bloqueios.length) return false
+    const [hh, mm] = h.split(':').map(Number)
+    const slot = new Date(ano, mes, dia, hh, mm).getTime()
+    return bloqueios.some(b =>
+      slot >= new Date(b.inicio).getTime() &&
+      slot <  new Date(b.fim).getTime()
+    )
+  }
+
+  const disponiveis = HORARIOS.filter(h => !ocupados.has(h) && !horarioBloqueado(h)).length
   if (availText) availText.textContent = `${disponiveis} horário${disponiveis !== 1 ? 's' : ''} disponível${disponiveis !== 1 ? 'is' : ''}`
 
   if (!timesGrid) return
   timesGrid.innerHTML = HORARIOS.map((h, i) => {
-    const indisponivel = ocupados.has(h)
+    const indisponivel = ocupados.has(h) || horarioBloqueado(h)
     return `
       <div class="time-btn ${indisponivel ? 'unavailable' : ''}"
            id="time-${i}"
@@ -1517,31 +1540,55 @@ window.selecionarDiaReagendar = async (i, label) => {
 async function renderReagendarHorarios(label) {
   const grid = document.getElementById('reagendarTimesGrid')
   let ocupados = new Set()
+  let bloqueios = []
+  let dia, mes, ano
+
   try {
     const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
     const partes = label.split(' ')[1].split('/')
-    const dia    = parseInt(partes[0])
-    const mes    = meses[partes[1]]
-    const ano    = new Date().getFullYear()
+    dia    = parseInt(partes[0])
+    mes    = meses[partes[1]]
+    ano    = new Date().getFullYear()
     const dataInicio = new Date(ano, mes, dia, 0, 0, 0).toISOString()
     const dataFim    = new Date(ano, mes, dia, 23, 59, 59).toISOString()
-    const { data } = await supabase
-      .from('agendamentos')
-      .select('horario')
-      .eq('filial_id',  _reagendar.filialId)
-      .eq('barbeiro',   _reagendar.barbeiroNome)
-      .gte('horario',   dataInicio)
-      .lte('horario',   dataFim)
-      .in('status',     ['confirmado', 'pendente'])
-      .neq('id',        _reagendar.id)
-    if (data) data.forEach(row => {
+    const [agRes, blqRes] = await Promise.all([
+      supabase
+        .from('agendamentos')
+        .select('horario')
+        .eq('filial_id',  _reagendar.filialId)
+        .eq('barbeiro',   _reagendar.barbeiroNome)
+        .gte('horario',   dataInicio)
+        .lte('horario',   dataFim)
+        .in('status',     ['confirmado', 'pendente'])
+        .neq('id',        _reagendar.id),
+      supabase
+        .from('bloqueios')
+        .select('barbeiro, inicio, fim')
+        .eq('filial_id', _reagendar.filialId)
+        .or(`barbeiro.eq.${_reagendar.barbeiroNome},barbeiro.is.null`)
+        .lte('inicio', dataFim)
+        .gte('fim',    dataInicio),
+    ])
+    if (agRes.data) agRes.data.forEach(row => {
       const h = new Date(row.horario)
       ocupados.add(`${String(h.getHours()).padStart(2,'0')}:${String(h.getMinutes()).padStart(2,'0')}`)
     })
+    if (blqRes.data) bloqueios = blqRes.data
   } catch (_) {}
+
+  function horarioBloqueado(h) {
+    if (!bloqueios.length) return false
+    const [hh, mm] = h.split(':').map(Number)
+    const slot = new Date(ano, mes, dia, hh, mm).getTime()
+    return bloqueios.some(b =>
+      slot >= new Date(b.inicio).getTime() &&
+      slot <  new Date(b.fim).getTime()
+    )
+  }
+
   if (!grid) return
   grid.innerHTML = HORARIOS.map((h, i) => {
-    const indisponivel = ocupados.has(h)
+    const indisponivel = ocupados.has(h) || horarioBloqueado(h)
     return `
       <div class="time-btn ${indisponivel ? 'unavailable' : ''}"
            id="rtime-${i}"

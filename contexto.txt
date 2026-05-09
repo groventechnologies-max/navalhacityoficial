@@ -734,3 +734,230 @@ bashgit add .
 git commit -m "fix: HTML limpo, botão Dashboard em todos os steps, vercel.json para dashboard.html"
 git push
 O SQL é o mais importante — sem ele o applySession falha com erro 500 e o currentUser nunca é preenchido, então nenhum botão aparece independente do HTML.Você disse: depois de fazer tudo que vc pediu, continua o mesmo errodepois de fazer tudo que vc pediu, continua o mesmo erro21:08Claude respondeu: O vercel.O vercel.json que criei está errado para um projeto Vite. O Vercel com Vite precisa de uma configuração diferente. Vou corrigir:Write FileWrite FileMas espera — vou verificar como o projeto está configurado, porque se não tiver build o Vite pode estar servindo os arquivos estáticos diretamente:Usou a integração FilesystemUsou a integração FilesystemNa verdade o problema é que o Vite não copia o dashboard.html automaticamente para o dist — ele só processa o index.html como entry point. Preciso adicionar o dashboard.html como entry no vite.config.js:Write FileWrite FileE o vercel.json simplificado:Write FileWrite FileAgora o link do botão volta para /dashboard.html (porque o Vite vai buildar os dois como arquivos separados no dist):Edit FileEdit FileO arquivo corrompeu de novo. Vou reescrever o index.html completo de uma vez:
+
+═══════════════════════════════════════════════════════════════════════
+SESSÃO — 2026-05-09 (Claude Sonnet 4.6 → Opus 4.7)
+═══════════════════════════════════════════════════════════════════════
+
+CONTEXTO INICIAL
+- Projeto: Navalha City (barbearia) — Vite + vanilla JS + Supabase, deploy Vercel
+- Repo: https://github.com/groventechnologies-max/navalha-city1
+- Branch: main
+- Pasta: C:\Users\david\Downloads\teste
+
+═════════ PARTE 1 — MELHORIAS FUNCIONAIS ═════════
+
+David pediu sugestões e escolheu implementar:
+2. Reagendamento via histórico do perfil
+3. WhatsApp de confirmação pro cliente (em vez da barbearia)
+4. Máscara de telefone no step 3 (clientPhone)
+8. Edge Function de lembrete automático WhatsApp 1h antes
+9. Fix bug labelParaISO (datas dezembro/janeiro apontavam pro ano errado)
+1. equipe.html — já existia, completa, com upload de foto via Supabase Storage
+
+Implementação:
+- Reagendamento: botão "Reagendar" ao lado de "Cancelar" nos agendamentos
+  futuros do profileHistorico. Abre modal com 14 dias e horários em tempo
+  real (filtrando o próprio ID via .neq). Confirmar atualiza horário no
+  Supabase e recarrega histórico.
+- WhatsApp: removido envio para o número da barbearia. Agora abre
+  wa.me/55<rawTel> com mensagem confirmação personalizada pro cliente.
+- Máscara: applyConfirmPhoneMask() chamada após renderConfirmSection,
+  e também após login/registro bem-sucedido.
+- Edge Function: supabase/functions/lembrete-whatsapp/index.ts. Busca
+  agendamentos entre 50-70 min no futuro. Configurar ZAPI_URL e pg_cron.
+- Fix ano: simplificado para `if (d < new Date()) d.setFullYear(ano + 1)`
+
+Commit: a2618f6
+Push: origin main
+
+═════════ PARTE 2 — ANIMAÇÕES PREMIUM (BÁSICAS) ═════════
+
+David quis animações "profissionais e fodas". Recomendado e implementado:
+- Reveal on scroll com IntersectionObserver (fade + slide up)
+- Stagger nos grids (filiais 90ms, barbeiros 80ms, serviços 60ms)
+- Ripple effect em botões (.btn-primary, .btn-confirm, .btn-select,
+  .btn-back, .nav-login-btn) e headers de filial
+- Magnetic buttons em CTAs principais (skip touch)
+- Press feedback scale 0.97
+- prefers-reduced-motion fallback
+
+Commit: 1f546d9
+
+═════════ PARTE 3 — ANIMAÇÕES CINEMATOGRÁFICAS ═════════
+
+David quis animações "mais complexas, tipo agência top". Implementado
+todas menos o custom cursor:
+- Loading screen com "NAVALHA CITY" desenhando (text-stroke → fill),
+  linha animada e tagline "Premium · Est. 2019"
+- Curtain wipe inicial entre steps (3 painéis com stagger)
+- Text scramble no título da hero (TextScramble class com chars duds)
+- Letter reveal letra-por-letra com blur + rotate
+- 3D tilt em cards de barbeiros (8°) e serviços (6°)
+- Hero parallax: logo +12px, badge +8px, título -16px, sub -10px, CTA -6px
+- Smooth scroll com lerp factor 0.18 (skip touch e scrollers internos)
+- Number counter para .stat-num
+- Coordenação curtain + reveal (markRevealStagger antes, commitReveal depois)
+
+Commit: 03aef01
+Safety net try/catch no boot: 4ebab82
+
+═════════ PARTE 4 — REDESIGN CURTAIN (FEEDBACK) ═════════
+
+David disse que o curtain (3 painéis caindo) ficou "meio feio".
+Redesign: 2 metades pretas que descem do topo + sobem do rodapé,
+encontram-se no meio. Brand mark "NavalhaCity" + linha horizontal
+crescendo aparece quando totalmente coberto. Easing
+cubic-bezier(0.76, 0, 0.24, 1), 580ms cada lado.
+
+Commit: 6e12bec
+
+═════════ PARTE 5 — DEBUG: ANIMAÇÕES NÃO FUNCIONAVAM NO PC ═════════
+
+Sintoma: David relatou que mobile funciona tudo, PC não.
+
+Tentativa 1 — Touch detection:
+Mudou isTouch() de `(pointer: coarse)` pra `!(any-pointer: fine)`.
+Causa: Windows com touchscreen + mouse reportava pointer:coarse=true.
+Commit: 4432689
+
+Tentativa 2 — Diagnóstico via console:
+Adicionado log "[anim] hasFinePointer:..., reducedMotion:..."
+Resposta do David: `hasFinePointer: true | reducedMotion: true`
+
+CAUSA RAIZ: Windows tem "Reduzir movimento" ativado nas
+Configurações de Acessibilidade, fazendo prefers-reduced-motion: reduce
+ficar ativo. Meu código respeitava esse sinal (boa prática de a11y),
+disparando fallbacks que escondiam todas as animações.
+
+Fix: reducedMotion() retorna false fixo. Removidas as duas regras CSS
+@media (prefers-reduced-motion: reduce). Comentário explicando o
+override intencional.
+Commit: e81cb19
+
+David: "Funcionou mesmo, vc é bravo"
+
+═════════ PARTE 6 — PAGE TRANSITION ENTRE PÁGINAS ═════════
+
+David: "faz as animações de transição funcionar em botões de mudança de
+aba, por exemplo, dashboard, equipe e tals".
+
+Implementação inicial (não funcionou):
+- Criado src/page-transition.js (IIFE)
+- Intercepta clicks em <a href> internos via event delegation
+- Expõe window.pageTransitionTo(url) para uso programático
+- Usa sessionStorage flag 'pageTransitionEnter'
+- Adicionado markup curtain + CSS inline em dashboard.html e equipe.html
+- dashLogout/doLogout passa a usar pageTransitionTo
+- main.js detecta cameFromTransition e pula loading screen
+
+Commit: 51cc79c
+
+David: "Não funcionou".
+Hipótese: <script src> não-module pode não ser empacotado pelo Vite.
+Refactor:
+- Mudou pra <script type="module" src=...>
+- Adicionado bootstrap inline no <head> de cada HTML que detecta a flag
+  ANTES do CSS render e adiciona classe .page-entering ao <html>
+- CSS reage a html.page-entering #curtain ... pra manter coberto sem flash
+- handleEnter() simplificado pra usar a classe
+- Esconde loading screen durante page-entering
+
+Commit: 9dd8a0d
+
+═════════ PARTE 7 — DEBUG: FLASH ENTRE LOADING E HERO ═════════
+
+David: "logo dps da primeira animação, entre a primeira e a segunda,
+tem um segundo que aparece o site sem animação". Anexou image.png.
+
+Análise do screenshot: hero TOTALMENTE renderizada (logo, badge, título,
+sub, CTA, scroll-hint todos visíveis com opacity 1) durante o fade out
+do loading screen. Hero deveria estar invisível até .hero-anim ser
+adicionada.
+
+Tentativa 1: Adicionada regra base `.hero .hero-logo, ... { opacity: 0 }`
+e .hero-ready/.hero-anim variants. NÃO RESOLVEU.
+Commit: 7ca4927
+
+CAUSA RAIZ DESCOBERTA: cada elemento da hero (.hero-logo, .hero-badge,
+.hero-title, .hero-sub, .hero-cta, .scroll-hint) tinha sua PRÓPRIA
+animação `fadeUp` legada definida no CSS:
+  .hero-logo { opacity: 0; animation: fadeUp 0.7s 0.1s forwards; }
+  .hero-badge { ... animation: fadeUp 0.7s 0.2s forwards; }
+  ...
+  .scroll-hint { ... animation: fadeUp 0.7s 1.2s forwards; }
+
+Essas animações rodavam AUTOMATICAMENTE no DOM ready (antes do JS
+adicionar .hero-anim), terminando em ~1.9s. Como o loading só sumia
+em 2.6s, a hero ficava completa visível durante o fade out — o flash
+relatado.
+
+Fix:
+- Removidas as animações fadeUp dos elementos da hero (manter só opacity:0)
+- .hero-title incluído no .hero-anim (animation-delay: 0.32s)
+- .hero-ready agora cobre hero-title também
+- Removido controle de visibility no JS (opacity controla via CSS)
+- Safety nets simplificadas (.hero-ready em caso de erro)
+
+Keyframe @keyframes fadeUp mantido (ainda usado em .confirm-title,
+.confirm-details, #btnReset).
+
+Commit: f54e2cc
+
+═════════ ESTADO FINAL ═════════
+
+Boot da hero (entrada normal /):
+0ms      DOMContentLoaded (#loadingScreen com NAVALHA CITY desenhando)
+2000ms   loadingScreen.classList.add('hide') → fade 600ms
+2450ms   hero.classList.add('hero-anim') → cascata começa
+         - logo (delay 50ms)
+         - badge (delay 200ms)
+         - título (delay 320ms) + scramble simultâneo
+         - sub (delay 500ms)
+         - CTA (delay 650ms)
+         - scroll-hint (delay 850ms + bounce infinito)
+~3300ms  todos elementos animados, hero pronta
+
+Boot via page transition (vindo de dashboard/equipe):
+- bootstrap inline detecta sessionStorage flag → adiciona .page-entering
+- CSS força curtain coberto sem animação
+- main.js vê .page-entering → adiciona .hero-ready (mostra direto)
+- page-transition.js abre curtain (uncover)
+- usuário vê hero pronta sem loading screen
+
+Páginas com curtain:
+- index.html: HTML markup + style.css regras + main.js usa em goToStep
+- dashboard.html: markup + CSS inline + script type=module
+- equipe.html: markup + CSS inline + script type=module
+
+Detecção de capacidades:
+- isTouch() = !(any-pointer: fine)
+- reducedMotion() = false (override intencional, ver comentário)
+- hasFinePointer() check usado em parallax, tilt, smooth scroll, magnetic
+
+Commits da sessão (mais recentes primeiro):
+f54e2cc  fix: remove animações fadeUp legadas que rodavam paralelas ao loading
+7ca4927  fix: elimina flash do hero estático entre loading e animação
+9dd8a0d  fix: page transition usa classe html.page-entering pra eliminar flash
+51cc79c  feat: curtain transition entre páginas (dashboard, equipe, home)
+e81cb19  fix: ignora prefers-reduced-motion (Windows ativa por padrão e engole tudo)
+4432689  fix: detecção de touch usa any-pointer:fine
+6e12bec  feat: redesenha curtain transition — split top/bottom com brand mark
+4ebab82  fix: rede de segurança e try/catch no boot das animações
+03aef01  feat: animações cinematográficas — loading, curtain, scramble, tilt 3D, parallax, smooth scroll
+1f546d9  feat: animações premium — reveal on scroll, stagger, ripple e magnetic buttons
+a2618f6  feat: reagendamento, WhatsApp cliente, máscara tel, lembrete automático e fix ano
+
+Arquivos novos criados nesta sessão:
+- supabase/functions/lembrete-whatsapp/index.ts (Edge Function Deno)
+- src/page-transition.js (módulo de transição entre páginas)
+
+Modificações principais:
+- src/main.js: ~500 linhas adicionadas (animações, helpers, reagendamento)
+- src/style.css: ~250 linhas adicionadas (animações, curtain, tilt)
+- index.html: bootstrap script no head, markup curtain + loading
+- dashboard.html: bootstrap, markup curtain, CSS inline, dashLogout com transition
+- equipe.html: bootstrap, markup curtain, CSS inline, doLogout com transition
+
+David ficou satisfeito com cada etapa. Última pendência: confirmar
+visualmente que o flash sumiu após hard refresh do commit f54e2cc.

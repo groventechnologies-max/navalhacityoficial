@@ -1275,51 +1275,119 @@ window.selecionarServico = (i) => {
   state.servico = DATA.servicos[i]
 }
 
-function renderDias() {
-  const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-  const months   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-  const today    = new Date()
+// Estado do calendário visível (mês/ano)
+const _calState = {
+  month: new Date().getMonth(),
+  year:  new Date().getFullYear(),
+  hostId: 'daysStrip',
+  onSelect: null,  // (dateStr, label) => void
+  selected: null,  // 'YYYY-MM-DD'
+}
 
-  document.getElementById('daysStrip').innerHTML = Array.from({ length: 14 }, (_, i) => {
-    const d    = new Date(today)
-    d.setDate(today.getDate() + i + 1)
-    const wd   = weekdays[d.getDay()]
-    const dn   = d.getDate()
-    const mon  = months[d.getMonth()]
-    const label = `${wd} ${dn}/${mon}`
-    return `
-      <div class="day-btn" id="day-${i}" onclick="selecionarDia(${i}, '${label}')">
-        <div class="day-weekday">${wd}</div>
-        <div class="day-num">${dn}</div>
-        <div class="day-month" style="font-size:10px;opacity:0.6">${mon}</div>
+const MESES_PT_FULL  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const MESES_PT_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+const WEEKDAYS_PT_SHORT = ['Sex', 'Sex', 'Sex', 'Sex', 'Sex', 'Sex', 'Sex'] // não usado direto
+const WEEKDAYS_HEADER = ['D','S','T','Q','Q','S','S']
+
+function fmtDateISO(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+function fmtDateLabel(d) {
+  const wds = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+  return `${wds[d.getDay()]} ${d.getDate()}/${MESES_PT_SHORT[d.getMonth()]}`
+}
+
+function renderCalendar(host = document.getElementById(_calState.hostId)) {
+  if (!host) return
+  const today = new Date(); today.setHours(0,0,0,0)
+  const minMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const maxFuture = new Date(today); maxFuture.setMonth(today.getMonth() + 2)
+
+  const { month, year } = _calState
+  const firstDay = new Date(year, month, 1)
+  const lastDay  = new Date(year, month + 1, 0)
+  const startWd  = firstDay.getDay()
+  const daysIn   = lastDay.getDate()
+
+  const canPrev = (year > minMonth.getFullYear()) ||
+                  (year === minMonth.getFullYear() && month > minMonth.getMonth())
+  const canNext = (year < maxFuture.getFullYear()) ||
+                  (year === maxFuture.getFullYear() && month < maxFuture.getMonth())
+
+  let html = `
+    <div class="cal-header">
+      <div class="cal-month">${MESES_PT_FULL[month]} ${year}</div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="navCalendar(-1)" ${canPrev ? '' : 'disabled'}>‹</button>
+        <button class="cal-nav-btn" onclick="navCalendar(1)"  ${canNext ? '' : 'disabled'}>›</button>
       </div>
-    `
-  }).join('')
+    </div>
+    <div class="cal-grid">
+      ${WEEKDAYS_HEADER.map(w => `<div class="cal-weekday">${w}</div>`).join('')}
+  `
 
+  // Espaços vazios antes do primeiro dia
+  for (let i = 0; i < startWd; i++) html += `<div class="cal-day empty"></div>`
+
+  for (let d = 1; d <= daysIn; d++) {
+    const date = new Date(year, month, d); date.setHours(0,0,0,0)
+    const iso  = fmtDateISO(date)
+    const isPast    = date < today
+    const isSunday  = date.getDay() === 0
+    const isFar     = date > maxFuture
+    const isToday   = date.getTime() === today.getTime()
+    const disabled  = isPast || isSunday || isFar
+    const selected  = _calState.selected === iso
+    const cls = ['cal-day']
+    if (disabled) cls.push('disabled')
+    if (isToday)  cls.push('today')
+    if (selected) cls.push('selected')
+    const onclick = disabled ? '' : `onclick="selecionarDia('${iso}')"`
+    html += `<div class="${cls.join(' ')}" ${onclick}>${d}</div>`
+  }
+
+  html += `</div>`
+  host.innerHTML = html
+}
+
+window.navCalendar = (dir) => {
+  _calState.month += dir
+  if (_calState.month > 11) { _calState.month = 0;  _calState.year++ }
+  if (_calState.month < 0)  { _calState.month = 11; _calState.year-- }
+  renderCalendar()
+}
+
+function renderDias() {
+  // Reset do calendário pro mês atual quando renderiza um novo agendamento
+  const today = new Date()
+  _calState.month   = today.getMonth()
+  _calState.year    = today.getFullYear()
+  _calState.hostId  = 'daysStrip'
+  _calState.selected = null
+  renderCalendar()
   document.getElementById('timesGrid').innerHTML = ''
 }
 
 const HORARIOS = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00']
 
-function labelParaISO(label, horario) {
-  const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
-  const partes = label.split(' ')[1].split('/')
-  const dia    = parseInt(partes[0])
-  const mes    = meses[partes[1]]
-  const ano    = new Date().getFullYear()
-  const [h, m] = horario.split(':').map(Number)
-  const d = new Date(ano, mes, dia, h, m)
-  if (d < new Date()) d.setFullYear(ano + 1)
-  return d.toISOString()
+function dateAndTimeToISO(dateISO, horario) {
+  // dateISO: 'YYYY-MM-DD', horario: 'HH:MM' → ISOString local
+  const [y, m, d]  = dateISO.split('-').map(Number)
+  const [h, mm]    = horario.split(':').map(Number)
+  return new Date(y, m - 1, d, h, mm).toISOString()
 }
 
-window.selecionarDia = async (i, label) => {
-  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'))
-  const dayBtn = document.getElementById(`day-${i}`)
-  if (dayBtn) dayBtn.classList.add('selected')
-  state.dia    = label
-  state.diaIdx = i
-  state.horario = null
+window.selecionarDia = async (dateISO) => {
+  _calState.selected = dateISO
+  renderCalendar()
+
+  const dateObj = new Date(dateISO + 'T00:00:00')
+  state.dia      = dateISO
+  state.diaLabel = fmtDateLabel(dateObj)
+  state.horario  = null
 
   const timesGrid = document.getElementById('timesGrid')
   const availText = document.getElementById('availText')
@@ -1328,10 +1396,10 @@ window.selecionarDia = async (i, label) => {
   if (availBar)  availBar.classList.add('active')
   if (availText) availText.textContent = 'Carregando...'
 
-  await renderHorarios(label)
+  await renderHorarios(dateISO)
 }
 
-async function renderHorarios(label) {
+async function renderHorarios(dateISO) {
   const timesGrid = document.getElementById('timesGrid')
   const availText = document.getElementById('availText')
 
@@ -1340,11 +1408,8 @@ async function renderHorarios(label) {
   let dataInicio, dataFim, dia, mes, ano
 
   try {
-    const meses = { Jan:0, Fev:1, Mar:2, Abr:3, Mai:4, Jun:5, Jul:6, Ago:7, Set:8, Out:9, Nov:10, Dez:11 }
-    const partes = label.split(' ')[1].split('/')
-    dia    = parseInt(partes[0])
-    mes    = meses[partes[1]]
-    ano    = new Date().getFullYear()
+    const [y, mm, dd] = dateISO.split('-').map(Number)
+    ano = y; mes = mm - 1; dia = dd
     dataInicio = new Date(ano, mes, dia, 0, 0, 0).toISOString()
     dataFim    = new Date(ano, mes, dia, 23, 59, 59).toISOString()
 
@@ -1433,7 +1498,7 @@ window.confirmarAgendamento = async () => {
       barbeiro:     state.barbeiro.nome,
       servico:      state.servico.nome,
       preco:        state.servico.preco,
-      horario:      labelParaISO(state.dia, state.horario),
+      horario:      dateAndTimeToISO(state.dia, state.horario),
       observacoes:  document.getElementById('clientObs')?.value.trim() || null,
       status:       'confirmado',
     })
@@ -1447,7 +1512,7 @@ window.confirmarAgendamento = async () => {
         <div><strong>Unidade:</strong> ${escapeHTML(state.filial.nome)}</div>
         <div><strong>Barbeiro:</strong> ${escapeHTML(state.barbeiro.nome)}</div>
         <div><strong>Serviço:</strong> ${escapeHTML(state.servico.nome)} — <span class="hl">${escapeHTML(state.servico.preco)}</span></div>
-        <div><strong>Data:</strong> ${escapeHTML(state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
+        <div><strong>Data:</strong> ${escapeHTML(state.diaLabel || state.dia)} às <span class="hl">${escapeHTML(state.horario)}</span></div>
         <div style="margin-top:10px;font-size:13px;color:var(--muted)">Confirmação para <span class="hl">${escapeHTML(tel)}</span></div>
       `
     }
@@ -1463,7 +1528,7 @@ window.confirmarAgendamento = async () => {
         `📌 *Unidade:* ${state.filial.nome}`,
         `💈 *Barbeiro:* ${state.barbeiro.nome}`,
         `✂️ *Serviço:* ${state.servico.nome} (${state.servico.preco})`,
-        `📅 *Data:* ${state.dia} às ${state.horario}`,
+        `📅 *Data:* ${state.diaLabel || state.dia} às ${state.horario}`,
         document.getElementById('clientObs')?.value.trim()
           ? `📝 *Obs:* ${document.getElementById('clientObs').value.trim()}`
           : null,

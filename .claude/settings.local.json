@@ -6,7 +6,10 @@
       "Bash(git push *)",
       "Bash(read d *)",
       "PowerShell(New-Item *)",
-      "mcp__claude_ai_Supabase__execute_sql"
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(Test-Path *)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__list_organizations"
     ]
   }
 }

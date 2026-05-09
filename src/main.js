@@ -176,11 +176,7 @@ async function scrambleHeroTitle() {
   const title = document.querySelector('.hero-title')
   if (!title || title._scrambled) return
   title._scrambled = true
-  if (reducedMotion()) {
-    title.style.visibility = 'visible'
-    return
-  }
-  title.style.visibility = 'visible'
+  if (reducedMotion()) return
   const original = title.innerHTML
   const finalText = title.textContent
   const fx = new TextScramble(title)
@@ -1561,10 +1557,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   attachSmoothScroll()
   setupLetterReveal('#step-1 .section-title')
 
-  // Esconde título da hero até o scramble rodar (evita flash do texto plain)
-  const _heroTitle = document.querySelector('.hero-title')
-  if (_heroTitle) _heroTitle.style.visibility = 'hidden'
-
   // ── Rede de segurança: força loading a sair se algo travar ──
   setTimeout(() => {
     document.getElementById('loadingScreen')?.classList.add('hide')
@@ -1572,8 +1564,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (hero && !hero.classList.contains('hero-anim') && !hero.classList.contains('hero-ready')) {
       hero.classList.add('hero-ready')
     }
-    const t = document.querySelector('.hero-title')
-    if (t) t.style.visibility = 'visible'
   }, 5000)
 
   // Se a página está sendo aberta vinda de uma transição (ex: dashboard → /),
@@ -1587,8 +1577,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loadingScreen')?.classList.add('hide')
         const hero = document.querySelector('#step-0 .hero')
         hero?.classList.add('hero-ready') // mostra direto, sem animação de subir
-        const t = document.querySelector('.hero-title')
-        if (t) t.style.visibility = 'visible'
         try { attachHeroParallax() } catch (e) { console.warn('parallax falhou', e) }
         return
       }
@@ -1598,17 +1586,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       const hero = document.querySelector('#step-0 .hero')
       hero?.classList.add('hero-anim')
       try { attachHeroParallax() } catch (e) { console.warn('parallax falhou', e) }
-      try { scrambleHeroTitle() } catch (e) {
-        console.warn('scramble falhou', e)
-        const t = document.querySelector('.hero-title')
-        if (t) t.style.visibility = 'visible'
-      }
+      try { scrambleHeroTitle() } catch (e) { console.warn('scramble falhou', e) }
     } catch (e) {
       console.error('boot animation falhou', e)
       document.getElementById('loadingScreen')?.classList.add('hide')
       document.querySelector('#step-0 .hero')?.classList.add('hero-ready')
-      const t = document.querySelector('.hero-title')
-      if (t) t.style.visibility = 'visible'
     }
   })()
 

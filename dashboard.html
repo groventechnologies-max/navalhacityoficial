@@ -1125,6 +1125,9 @@
       const sub   = document.getElementById('actionModalSub')
       const btn   = document.getElementById('actionModalBtn')
 
+      // Reset estado do botão (ficava disabled após uma ação anterior bem-sucedida)
+      btn.disabled = false
+
       if (tipo === 'cancelar') {
         icon.textContent  = '⚠️'
         title.textContent = 'Cancelar agendamento'
@@ -1193,8 +1196,9 @@
         closeActionModal()
       } catch (err) {
         btn.textContent = 'Erro — tente novamente'
-        btn.disabled    = false
         console.error(err)
+      } finally {
+        btn.disabled = false
       }
     }
 

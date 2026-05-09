@@ -1560,15 +1560,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   const _heroTitle = document.querySelector('.hero-title')
   if (_heroTitle) _heroTitle.style.visibility = 'hidden'
 
+  // ── Rede de segurança: força loading a sair se algo travar ──
+  setTimeout(() => {
+    document.getElementById('loadingScreen')?.classList.add('hide')
+    const t = document.querySelector('.hero-title')
+    if (t) t.style.visibility = 'visible'
+  }, 5000)
+
   // ── Boot sequence: loading → hero anim → scramble + parallax ──
   ;(async () => {
-    await wait(2000) // espera animações internas do loading terminarem
-    document.getElementById('loadingScreen')?.classList.add('hide')
-    await wait(450) // espera fade do loading completar
-    const hero = document.querySelector('#step-0 .hero')
-    hero?.classList.add('hero-anim')
-    attachHeroParallax()
-    scrambleHeroTitle() // dispara junto com hero-anim, sem gap visual no título
+    try {
+      await wait(2000) // espera animações internas do loading terminarem
+      document.getElementById('loadingScreen')?.classList.add('hide')
+      await wait(450) // espera fade do loading completar
+      const hero = document.querySelector('#step-0 .hero')
+      hero?.classList.add('hero-anim')
+      try { attachHeroParallax() } catch (e) { console.warn('parallax falhou', e) }
+      try { scrambleHeroTitle() } catch (e) {
+        console.warn('scramble falhou', e)
+        const t = document.querySelector('.hero-title')
+        if (t) t.style.visibility = 'visible'
+      }
+    } catch (e) {
+      console.error('boot animation falhou', e)
+      document.getElementById('loadingScreen')?.classList.add('hide')
+      const t = document.querySelector('.hero-title')
+      if (t) t.style.visibility = 'visible'
+    }
   })()
 
   supabase.auth.onAuthStateChange(async (event, session) => {

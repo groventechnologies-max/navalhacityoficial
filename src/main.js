@@ -353,43 +353,11 @@ function attachHeroParallax() {
   }
 }
 
-// ─── ANIMAÇÕES: SMOOTH SCROLL (lerp) ─────────────────────
+// ─── ANIMAÇÕES: SMOOTH SCROLL ────────────────────────────
+// Removido: lerp wheel intercept causava conflito com scroll nativo, abas
+// trocando, modais e curtain — o navegador já tem scroll suave próprio.
 function attachSmoothScroll() {
-  if (isTouch() || reducedMotion()) return
-  document.querySelectorAll('.step').forEach(step => {
-    if (step._smoothScroll) return
-    step._smoothScroll = true
-    let target = step.scrollTop
-    let current = step.scrollTop
-    let raf = null
-
-    step.addEventListener('wheel', (e) => {
-      // não interceptar scroll horizontal nem dentro de scrollers internos
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
-      if (e.target.closest && e.target.closest('.profile-photos, .days-strip, .portfolio-strip, iframe')) return
-      const max = step.scrollHeight - step.clientHeight
-      if (max <= 0) return
-      e.preventDefault()
-      target = Math.max(0, Math.min(target + e.deltaY, max))
-      if (!raf) raf = requestAnimationFrame(tick)
-    }, { passive: false })
-
-    function tick() {
-      const diff = target - current
-      if (Math.abs(diff) < 0.5) {
-        current = target
-        step.scrollTop = target
-        raf = null
-        return
-      }
-      current += diff * 0.18
-      step.scrollTop = current
-      raf = requestAnimationFrame(tick)
-    }
-
-    // resync se houver scroll programático
-    step._syncScroll = () => { target = step.scrollTop; current = step.scrollTop }
-  })
+  // no-op intencional. Reservado caso a gente queira voltar com versão menos invasiva.
 }
 
 // ─── ANIMAÇÕES: CURTAIN TRANSITION ───────────────────────
@@ -404,12 +372,12 @@ async function curtainTransition(callback) {
   curtain.classList.remove('uncover')
   void curtain.offsetWidth
   curtain.classList.add('cover')
-  await wait(580)        // painéis se encontram no meio + brand mark aparece
+  await wait(400)        // painéis se encontram no meio + brand mark aparece
   callback()             // troca o conteúdo enquanto está totalmente coberto
-  await wait(120)        // pequena pausa pra brand mark "respirar"
+  await wait(80)         // pequena pausa pra brand mark "respirar"
   curtain.classList.remove('cover')
   curtain.classList.add('uncover')
-  await wait(580)        // painéis voltam pras bordas
+  await wait(400)        // painéis voltam pras bordas
   curtain.classList.remove('uncover')
   _curtainRunning = false
 }
@@ -1785,9 +1753,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         try { attachHeroParallax() } catch (e) { console.warn('parallax falhou', e) }
         return
       }
-      await wait(2000) // espera animações internas do loading terminarem
+      await wait(1200) // espera animações internas do loading terminarem
       document.getElementById('loadingScreen')?.classList.add('hide')
-      await wait(450) // espera fade do loading completar
+      await wait(280) // espera fade do loading completar
       const hero = document.querySelector('#step-0 .hero')
       hero?.classList.add('hero-anim')
       try { attachHeroParallax() } catch (e) { console.warn('parallax falhou', e) }

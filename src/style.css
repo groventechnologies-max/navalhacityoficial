@@ -1891,14 +1891,14 @@ body {
 .hero-anim .hero-title,
 .hero-anim .hero-sub,
 .hero-anim .hero-cta {
-  animation: hero-rise 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-.hero-anim .hero-logo  { animation-delay: 0.05s; }
-.hero-anim .hero-badge { animation-delay: 0.20s; }
-.hero-anim .hero-title { animation-delay: 0.32s; }
-.hero-anim .hero-sub   { animation-delay: 0.50s; }
-.hero-anim .hero-cta   { animation-delay: 0.65s; }
-.hero-anim .scroll-hint { animation: hero-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.85s forwards, scroll-bounce 2s ease-in-out 1.85s infinite; }
+.hero-anim .hero-logo  { animation-delay: 0.00s; }
+.hero-anim .hero-badge { animation-delay: 0.08s; }
+.hero-anim .hero-title { animation-delay: 0.16s; }
+.hero-anim .hero-sub   { animation-delay: 0.26s; }
+.hero-anim .hero-cta   { animation-delay: 0.36s; }
+.hero-anim .scroll-hint { animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.46s forwards, scroll-bounce 2s ease-in-out 1.4s infinite; }
 
 @keyframes hero-rise {
   from { opacity: 0; transform: translate3d(0, 24px, 0); }
@@ -1968,8 +1968,8 @@ body {
   align-items: center;
   justify-content: center;
   pointer-events: all;
-  transition: opacity 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-              visibility 0.6s;
+  transition: opacity 0.4s cubic-bezier(0.65, 0, 0.35, 1),
+              visibility 0.4s;
 }
 #loadingScreen.hide {
   opacity: 0;
@@ -1993,11 +1993,11 @@ body {
   -webkit-text-stroke: 1.5px white;
   -webkit-text-fill-color: transparent;
   opacity: 0;
-  animation: loading-title-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards,
-             loading-title-fill 0.4s ease 0.85s forwards;
+  animation: loading-title-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.02s forwards,
+             loading-title-fill 0.3s ease 0.55s forwards;
 }
 @keyframes loading-title-in {
-  from { opacity: 0; transform: translateY(24px) scale(0.94); letter-spacing: 18px; }
+  from { opacity: 0; transform: translateY(20px) scale(0.94); letter-spacing: 16px; }
   to   { opacity: 1; transform: translateY(0) scale(1);     letter-spacing: 8px; }
 }
 @keyframes loading-title-fill {
@@ -2010,7 +2010,7 @@ body {
   width: 0;
   height: 1px;
   background: white;
-  animation: loading-line-draw 0.6s cubic-bezier(0.65, 0, 0.35, 1) 1.05s forwards;
+  animation: loading-line-draw 0.4s cubic-bezier(0.65, 0, 0.35, 1) 0.6s forwards;
 }
 @keyframes loading-line-draw {
   to { width: 220px; }
@@ -2022,7 +2022,7 @@ body {
   color: var(--muted);
   text-transform: uppercase;
   opacity: 0;
-  animation: loading-fade-in 0.5s ease 1.45s forwards;
+  animation: loading-fade-in 0.35s ease 0.85s forwards;
 }
 @keyframes loading-fade-in {
   to { opacity: 1; }
@@ -2046,7 +2046,7 @@ body {
   height: 51%;
   background: var(--black);
   will-change: transform;
-  transition: transform 0.55s cubic-bezier(0.76, 0, 0.24, 1);
+  transition: transform 0.38s cubic-bezier(0.76, 0, 0.24, 1);
 }
 .curtain-top    { top: 0;    transform: translateY(-101%); }
 .curtain-bottom { bottom: 0; transform: translateY(101%);  }
@@ -2072,7 +2072,7 @@ body {
 }
 #curtain.cover .curtain-mark {
   opacity: 1;
-  transition: opacity 0.35s ease 0.25s;
+  transition: opacity 0.22s ease 0.15s;
 }
 
 .curtain-mark-text {

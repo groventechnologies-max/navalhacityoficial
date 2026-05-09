@@ -82,7 +82,7 @@ function attachGlobalRipple() {
 
 // ─── ANIMAÇÕES: MAGNETIC BUTTONS ─────────────────────────
 function attachMagneticEffect() {
-  if (window.matchMedia('(pointer: coarse)').matches) return // pula em touch
+  if (!hasFinePointer()) return // só ativa em devices com mouse fino
   const SELECTOR = '.btn-primary, .btn-confirm'
   const STRENGTH = 0.25
   document.querySelectorAll(SELECTOR).forEach(btn => bindMagnetic(btn, STRENGTH))
@@ -113,7 +113,10 @@ function bindMagnetic(btn, strength) {
 // ─── ANIMAÇÕES: WAIT HELPER ──────────────────────────────
 function wait(ms) { return new Promise(r => setTimeout(r, ms)) }
 function reducedMotion() { return window.matchMedia('(prefers-reduced-motion: reduce)').matches }
-function isTouch() { return window.matchMedia('(pointer: coarse)').matches }
+// Detecta se o device tem mouse fino. Usa any-pointer para suportar laptops
+// Windows com touchscreen + mouse — pointer:coarse retornaria true falsamente.
+function hasFinePointer() { return window.matchMedia('(any-pointer: fine)').matches }
+function isTouch() { return !hasFinePointer() }
 
 // ─── ANIMAÇÕES: TEXT SCRAMBLE ────────────────────────────
 class TextScramble {
@@ -1549,6 +1552,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadSession()
 
   renderFiliais()
+
+  // Diagnóstico (some quando os logs forem limpos)
+  console.log('[anim] hasFinePointer:', hasFinePointer(),
+              '| reducedMotion:', reducedMotion(),
+              '| anyPointerCoarse:', window.matchMedia('(any-pointer: coarse)').matches)
 
   // ── Animações: ripple + magnetic + smooth scroll + letter reveal estático ──
   attachGlobalRipple()

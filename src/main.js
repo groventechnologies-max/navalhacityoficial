@@ -1416,11 +1416,28 @@ async function renderHorarios(dateISO) {
     )
   }
 
-  const disponiveis = HORARIOS.filter(h => !ocupados.has(h) && !horarioBloqueado(h)).length
-  if (availText) availText.textContent = `${disponiveis} horário${disponiveis !== 1 ? 's' : ''} disponível${disponiveis !== 1 ? 'is' : ''}`
+  // Se for hoje, esconder horários que já passaram (com margem de 30 min)
+  const hojeISO = fmtDateISO(new Date())
+  const isToday = dateISO === hojeISO
+  const minTime = isToday ? Date.now() + 30 * 60 * 1000 : 0
+
+  function horarioPassado(h) {
+    if (!isToday) return false
+    const [hh, mm] = h.split(':').map(Number)
+    return new Date(ano, mes, dia, hh, mm).getTime() < minTime
+  }
+
+  const disponiveis = HORARIOS.filter(h => !ocupados.has(h) && !horarioBloqueado(h) && !horarioPassado(h)).length
+  if (availText) {
+    availText.textContent = disponiveis === 0 && isToday
+      ? 'Sem horários disponíveis hoje'
+      : `${disponiveis} horário${disponiveis !== 1 ? 's' : ''} disponível${disponiveis !== 1 ? 'is' : ''}`
+  }
 
   if (!timesGrid) return
-  timesGrid.innerHTML = HORARIOS.map((h, i) => {
+  // Esconde completamente os horários que já passaram (não mostra como cinza)
+  const horariosVisiveis = HORARIOS.filter(h => !horarioPassado(h))
+  timesGrid.innerHTML = horariosVisiveis.map((h, i) => {
     const indisponivel = ocupados.has(h) || horarioBloqueado(h)
     return `
       <div class="time-btn ${indisponivel ? 'unavailable' : ''}"
@@ -1669,8 +1686,19 @@ async function renderReagendarHorarios(dateISO) {
     )
   }
 
+  // Se for hoje, esconder horários já passados (margem 30 min)
+  const hojeISO = fmtDateISO(new Date())
+  const isToday = dateISO === hojeISO
+  const minTime = isToday ? Date.now() + 30 * 60 * 1000 : 0
+  function horarioPassado(h) {
+    if (!isToday) return false
+    const [hh, mm] = h.split(':').map(Number)
+    return new Date(ano, mes, dia, hh, mm).getTime() < minTime
+  }
+
   if (!grid) return
-  grid.innerHTML = HORARIOS.map((h, i) => {
+  const horariosVisiveis = HORARIOS.filter(h => !horarioPassado(h))
+  grid.innerHTML = horariosVisiveis.map((h, i) => {
     const indisponivel = ocupados.has(h) || horarioBloqueado(h)
     return `
       <div class="time-btn ${indisponivel ? 'unavailable' : ''}"

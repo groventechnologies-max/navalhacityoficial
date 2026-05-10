@@ -29,7 +29,7 @@ export const DATA = {
     {
       id: 2,
       nome: "Unidade 2",
-      regiao: "Zona Norte",
+      regiao: "Vila Edna",
       endereco: "Av. Pref. Raphael Vitiello, 280 — Vila Edna\nGuarujá, SP — CEP 11436-000",
       telefone: '+551398800-1002',
       whatsapp: '5513978262795',
@@ -48,7 +48,7 @@ export const DATA = {
     {
       id: 3,
       nome: "Unidade 3",
-      regiao: "Zona Sul",
+      regiao: "Jardim Boa Esperança",
       endereco: "Av. Adriano Dias dos Santos, 523 — Jardim Boa Esperança\nVicente de Carvalho, Guarujá, SP — CEP 11470-220",
       telefone: '+551398800-1003',
       whatsapp: '5513991308570',
@@ -65,7 +65,7 @@ export const DATA = {
     {
       id: 4,
       nome: "Unidade 4",
-      regiao: "Zona Leste",
+      regiao: "Enseada / EdosFit",
       endereco: "Rua Aureo Guenaga de Castro, 170 — Parque Enseada\nGuarujá, SP — CEP 11443-000",
       telefone: '+551398800-1004',
       whatsapp: '5513991647036',
@@ -85,7 +85,7 @@ export const DATA = {
     {
       id: 5,
       nome: "Unidade 5",
-      regiao: "Zona Oeste",
+      regiao: "Jardim Virgínia",
       endereco: "Rua Guilherme Salera, 570\nGuarujá, SP — CEP 11442-160",
       telefone: '+551398800-1005',
       whatsapp: '5513991051227',

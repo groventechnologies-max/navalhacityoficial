@@ -369,9 +369,6 @@ function renderFiliais() {
               <div class="filial-meta">
                 <span class="meta-line">${status.aberto ? 'Aberto agora' : 'Fechado'} · ${status.subLabel}</span>
               </div>
-<div class="filial-tags">
-                ${f.tags.map(t => `<span class="tag">${t}</span>`).join('')}
-              </div>
               <button class="btn-select" onclick="selecionarFilial(${f.id})">
                 Agendar nesta unidade →
               </button>

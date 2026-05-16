@@ -985,7 +985,8 @@ body {
   max-width: 520px;
   width: 100%;
 }
-.confirm-icon { font-size: 64px; margin-bottom: 24px; }
+.confirm-icon { margin-bottom: 24px; width: 80px; height: 80px; margin-left: auto; margin-right: auto; color: var(--white); display: flex; align-items: center; justify-content: center; }
+.confirm-icon svg { width: 100%; height: 100%; }
 .confirm-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 72px;
@@ -2050,8 +2051,9 @@ body {
   color: var(--muted);
 }
 .agend-empty .empty-icon {
-  font-size: 36px; margin-bottom: 12px; opacity: .4;
+  margin-bottom: 12px; opacity: .4; width: 44px; height: 44px; margin-left: auto; margin-right: auto;
 }
+.agend-empty .empty-icon svg { width: 100%; height: 100%; }
 .agend-empty .agend-empty-cta {
   margin-top: 16px;
   padding: 10px 24px;

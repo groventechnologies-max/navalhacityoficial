@@ -382,6 +382,16 @@ async function curtainTransition(callback) {
   _curtainRunning = false
 }
 
+// ─── DEV: auto-login como admin (desativa quando voltar pro Supabase real) ──
+const DEV_AUTO_ADMIN = true
+const DEV_ADMIN_USER = {
+  id:        'dev-admin',
+  nome:      'Admin Dev',
+  telefone:  '(11) 99999-0000',
+  role:      'admin',
+  filial_id: 1,
+}
+
 // ─── STATE ───────────────────────────────────────────────
 let currentStep    = 0
 let isLoggedIn     = false
@@ -398,6 +408,12 @@ const state = {
 
 // ─── AUTH: carregar sessão existente ─────────────────────
 async function loadSession() {
+  if (DEV_AUTO_ADMIN) {
+    currentUser = { ...DEV_ADMIN_USER }
+    isLoggedIn  = true
+    updateNavLoginBtns()
+    return
+  }
   const { data: { session } } = await supabase.auth.getSession()
   if (session) await applySession(session)
 }
@@ -516,6 +532,14 @@ async function handleLogin(identifier, senha) {
 
 // ─── AUTH: logout ────────────────────────────────────────
 async function handleLogout() {
+  if (DEV_AUTO_ADMIN) {
+    // em modo dev: "logout" só reinicia o estado mantendo o admin
+    currentUser = { ...DEV_ADMIN_USER }
+    isLoggedIn  = true
+    updateNavLoginBtns()
+    closeProfileModal()
+    return
+  }
   await supabase.auth.signOut()
   isLoggedIn  = false
   currentUser = null
@@ -775,7 +799,7 @@ function renderHistorico() {
           : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
         }</div>
         ${isFirst ? 'Você ainda não tem agendamentos.' : 'Nenhum agendamento neste filtro.'}
-        ${isFirst ? `<div><button class="agend-empty-cta" onclick="goToStep(1)">Agendar agora</button></div>` : ''}
+        ${isFirst ? `<div><button class="agend-empty-cta" onclick="iniciarAgendamentoDireto()">Agendar agora</button></div>` : ''}
       </div>
     `
     return
@@ -1047,68 +1071,177 @@ window.selecionarFilial = async (id) => {
   }
 }
 
+// Modo barbearia única: pula seleção de unidade
+function iniciarAgendamentoDireto() {
+  const base = DATA.filiais[0]
+  state.filial   = { ...base, nome: 'Sua Barbearia', regiao: '' }
+  state.barbeiro = null
+  renderPerfil()
+  goToStep(2)
+}
+window.iniciarAgendamentoDireto = iniciarAgendamentoDireto
+
 // ─── STEP 2: PERFIL + BARBEIROS ──────────────────────────
-function renderPerfil() {
-  const f = state.filial
+const PROFILE_TABS = ['Profissionais', 'Fidelidade', 'Produtos', 'Pacotes', 'Assinaturas', 'Avaliações']
 
-  document.getElementById('profileContent').innerHTML = `
-    <div class="section-label">${f.nome} — ${f.regiao}</div>
+function diasSemanaHorarios(f) {
+  const abre  = (f.horario?.abre  ?? 9).toString().padStart(2, '0') + ':00'
+  const fecha = (f.horario?.fecha ?? 19).toString().padStart(2, '0') + ':00'
+  return [
+    { dia: 'Segunda-feira', h: `${abre} - ${fecha}` },
+    { dia: 'Terça-feira',   h: `${abre} - ${fecha}` },
+    { dia: 'Quarta-feira',  h: `${abre} - ${fecha}` },
+    { dia: 'Quinta-feira',  h: `${abre} - ${fecha}` },
+    { dia: 'Sexta-feira',   h: `${abre} - ${fecha}` },
+    { dia: 'Sábado',        h: `${abre} - 18:00` },
+    { dia: 'Domingo',       h: 'Fechado' },
+  ]
+}
 
-    <div class="profile-photos-wrap">
-      <div class="profile-photos" id="photosCarousel">
-        ${[
-          { key: 'principal', label: 'Foto Principal' },
-          { key: 'ambiente',  label: 'Ambiente' },
-          { key: 'detalhe',   label: 'Detalhe' },
-          { key: 'cadeira',   label: 'Cadeira' },
-          { key: 'produtos',  label: 'Produtos' },
-        ].map(({ key, label }) => {
-          const url = f.fotos && f.fotos[key]
-          return `<div class="photo-placeholder${url ? ' has-photo' : ''}" data-label="${label}">
-            ${url ? `<img src="${url}" alt="${label}">` : ''}
-          </div>`
-        }).join('')}
-      </div>
-      <button class="photo-nav photo-nav-prev" onclick="scrollPhotos(-1)">←</button>
-      <button class="photo-nav photo-nav-next" onclick="scrollPhotos(1)">→</button>
-      <div class="photo-counter" id="photoCounter">1 / 5</div>
-    </div>
+const PAGAMENTOS = ['Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'PIX', 'Apple Pay', 'Pix Crédito', 'Mastercard', 'Visa', 'Elo']
 
-    <div class="barbers-label">Passo 02 — Escolha seu barbeiro</div>
-    <div class="barbers-title">${f.barbeiros.length} Profissionais Disponíveis</div>
+const COMODIDADES = [
+  { label: 'Wi-Fi',            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>` },
+  { label: 'Estacionamento',   icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>` },
+  { label: 'Acessibilidade',   icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="M19 13l-4-2-2-3-3 1-5 1"/><path d="M9 16a4 4 0 1 0 4 4"/><path d="M13 14l3 7h3"/></svg>` },
+  { label: 'Ambiente criança', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/><path d="M9 8h.01M15 8h.01"/></svg>` },
+]
 
-    <div class="barbers-grid">
-      ${f.barbeiros.map((b, i) => `
-        <div class="barber-card" id="barber-${i}" onclick="selecionarBarbeiro(${i})">
-          <div class="selected-badge">Selecionado</div>
-          ${b.badge ? `<div class="barber-badge">${escapeHTML(b.badge)}</div>` : ''}
-          <div class="barber-photo">
-            ${b.foto
-              ? `<img src="${escapeHTML(b.foto)}" alt="${escapeHTML(b.nome)}">`
-              : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:52%;height:52%;opacity:0.5"><circle cx="24" cy="17" r="9"/><path d="M6 44c0-10 8-17 18-17s18 7 18 17"/></svg>`}
-          </div>
-          <div class="barber-info">
-            <div class="barber-name">${escapeHTML(b.nome)}</div>
-            <div class="barber-specialty">${escapeHTML(b.especialidade)}</div>
-            <div class="barber-rating">${escapeHTML(b.nota || '')} · Disponível</div>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-
-    <div class="profile-desc">
-      <div>
-        <h2 class="profile-desc-title">${f.nome}</h2>
-        <p class="profile-desc-text">${f.descricao}</p>
-      </div>
-      <div class="profile-stats">
-        ${f.stats.map(s => `
-          <div class="stat">
-            <div class="stat-num">${s.n}</div>
-            <div class="stat-label">${s.l}</div>
+function renderPerfilTabContent(tab, f) {
+  if (tab === 'Profissionais') {
+    return `
+      <div class="barbers-grid">
+        ${f.barbeiros.map((b, i) => `
+          <div class="barber-card" id="barber-${i}" onclick="selecionarBarbeiro(${i})">
+            <div class="selected-badge">Selecionado</div>
+            ${b.badge ? `<div class="barber-badge">${escapeHTML(b.badge)}</div>` : ''}
+            <div class="barber-photo">
+              ${b.foto
+                ? `<img src="${escapeHTML(b.foto)}" alt="${escapeHTML(b.nome)}">`
+                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:52%;height:52%;opacity:0.5"><circle cx="24" cy="17" r="9"/><path d="M6 44c0-10 8-17 18-17s18 7 18 17"/></svg>`}
+            </div>
+            <div class="barber-info">
+              <div class="barber-name">${escapeHTML(b.nome)}</div>
+              <div class="barber-specialty">${escapeHTML(b.especialidade)}</div>
+              <div class="barber-rating">${escapeHTML(b.nota || '')} · Disponível</div>
+            </div>
           </div>
         `).join('')}
       </div>
+    `
+  }
+  const placeholders = {
+    'Fidelidade':  'Programa de fidelidade em breve. Volte logo!',
+    'Produtos':    'Catálogo de produtos em breve.',
+    'Pacotes':     'Pacotes promocionais serão divulgados em breve.',
+    'Assinaturas': 'Planos de assinatura em breve.',
+    'Avaliações':  'Ainda não há avaliações para esta unidade.',
+  }
+  return `<div class="bs-tab-empty">${placeholders[tab] || 'Em breve.'}</div>`
+}
+
+function renderPerfil() {
+  const f         = state.filial
+  const horarios  = diasSemanaHorarios(f)
+  const enderecoL = (f.endereco || '').split('\n')
+
+  document.getElementById('profileContent').innerHTML = `
+    <div class="bs-layout">
+      <main class="bs-main">
+
+        <div class="bs-shop-head">
+          <div class="bs-shop-id">
+            <div class="bs-shop-avatar">
+              <img src="/logo.svg" alt="${escapeHTML(f.nome)}">
+            </div>
+            <div class="bs-shop-meta">
+              <h2 class="bs-shop-name">${escapeHTML(f.nome)}</h2>
+              <div class="bs-shop-rating">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="12,2 15,9 22,9.5 17,14.5 18.5,21.5 12,18 5.5,21.5 7,14.5 2,9.5 9,9"/></svg>
+                <span>5.0</span>
+              </div>
+            </div>
+          </div>
+          <button class="bs-shop-cta" onclick="document.querySelector('.bs-tabs .bs-tab[data-tab=&quot;Profissionais&quot;]')?.click(); document.querySelector('#bsTabContent .barber-card')?.scrollIntoView({behavior:'smooth',block:'center'})">Agendar agora</button>
+        </div>
+
+        <div class="bs-photos" id="photosCarousel">
+          ${[
+            { key: 'principal', label: 'Foto Principal' },
+            { key: 'ambiente',  label: 'Ambiente' },
+            { key: 'detalhe',   label: 'Detalhe' },
+            { key: 'cadeira',   label: 'Cadeira' },
+            { key: 'produtos',  label: 'Produtos' },
+          ].map(({ key, label }) => {
+            const url = f.fotos && f.fotos[key]
+            return `<div class="bs-photo${url ? ' has' : ''}" data-label="${label}">${url ? `<img src="${url}" alt="${label}">` : ''}</div>`
+          }).join('')}
+        </div>
+
+        <div class="bs-tabs" role="tablist">
+          ${PROFILE_TABS.map((t, i) => `
+            <button class="bs-tab${i === 0 ? ' active' : ''}"
+                    role="tab"
+                    data-tab="${t}"
+                    onclick="switchPerfilTab('${t}')">${t}</button>
+          `).join('')}
+          <span class="bs-tabs-underline"></span>
+        </div>
+
+        <div class="bs-tab-content" id="bsTabContent">
+          ${renderPerfilTabContent('Profissionais', f)}
+        </div>
+
+        <div class="bs-comodidades">
+          <div class="bs-comodidades-head">
+            <h3 class="bs-comodidades-title">Comodidades</h3>
+            <span class="bs-comodidades-sub">Clique no item para mais informações</span>
+          </div>
+          <div class="bs-comodidades-grid">
+            ${COMODIDADES.map(c => `
+              <div class="bs-comodidade">
+                <div class="bs-comodidade-icon">${c.icon}</div>
+                <div class="bs-comodidade-label">${c.label}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+      </main>
+
+      <aside class="bs-side">
+        <div class="bs-side-block">
+          <div class="bs-side-address">
+            ${enderecoL.map(l => `<div>${escapeHTML(l)}</div>`).join('')}
+          </div>
+        </div>
+
+        <div class="bs-side-block">
+          <h4 class="bs-side-title">Horário de atendimento</h4>
+          <ul class="bs-side-hours">
+            ${horarios.map(h => `<li><span>${h.dia}</span><span>${h.h}</span></li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="bs-side-block">
+          <h4 class="bs-side-title">Formas de pagamento</h4>
+          <div class="bs-side-pays">
+            ${PAGAMENTOS.map(p => `<span class="bs-pay-chip">${escapeHTML(p)}</span>`).join('')}
+          </div>
+        </div>
+
+        <div class="bs-side-block">
+          <h4 class="bs-side-title">Redes Sociais</h4>
+          <div class="bs-side-social">
+            <a href="https://www.instagram.com/suabarbearia" target="_blank" rel="noopener" class="bs-social-btn" aria-label="Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>
+            </a>
+            <a href="https://wa.me/${f.whatsapp || ''}" target="_blank" rel="noopener" class="bs-social-btn" aria-label="WhatsApp">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </a>
+          </div>
+        </div>
+      </aside>
     </div>
 
     <footer class="step-footer">
@@ -1118,16 +1251,28 @@ function renderPerfil() {
   `
 
   // Animações de entrada
-  reveal(document.querySelector('#profileContent .section-label'), 0)
-  reveal(document.querySelector('#profileContent .profile-photos-wrap'), 80, 'reveal-scale')
-  reveal(document.querySelector('#profileContent .barbers-label'), 180)
-  reveal(document.querySelector('#profileContent .barbers-title'), 240)
+  reveal(document.querySelector('#profileContent .bs-shop-head'), 0)
+  reveal(document.querySelector('#profileContent .bs-photos'), 80, 'reveal-scale')
+  reveal(document.querySelector('#profileContent .bs-tabs'), 160)
   revealStagger('#profileContent .barber-card', 80)
-  reveal(document.querySelector('#profileContent .profile-desc'), 0, 'reveal-scale')
+  reveal(document.querySelector('#profileContent .bs-comodidades'), 0, 'reveal-scale')
+  reveal(document.querySelector('#profileContent .bs-side'), 120)
 
-  // 3D tilt nos barbeiros + counter nas stats
+  // 3D tilt nos barbeiros
   attachTilt('#profileContent .barber-card', document, 8)
-  setupCounters(document.getElementById('profileContent'))
+}
+
+window.switchPerfilTab = (tab) => {
+  document.querySelectorAll('#profileContent .bs-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab)
+  })
+  const container = document.getElementById('bsTabContent')
+  if (!container) return
+  container.innerHTML = renderPerfilTabContent(tab, state.filial)
+  if (tab === 'Profissionais') {
+    revealStagger('#profileContent .barber-card', 60)
+    attachTilt('#profileContent .barber-card', document, 8)
+  }
 }
 
 window.scrollPhotos = (dir) => {
@@ -1152,66 +1297,107 @@ window.selecionarBarbeiro = (idx) => {
 
 // ─── STEP 3: AGENDAMENTO ─────────────────────────────────
 function renderAgendamento() {
+  const b = state.barbeiro
+  const f = state.filial
+
   document.getElementById('scheduleContent').innerHTML = `
-    <div class="section-label">Passo 03 — Marque seu horário</div>
-    <h2 class="section-title" style="margin-bottom:32px">Agendamento</h2>
+    <div class="bs-layout">
+      <main class="bs-main">
 
-    <div class="schedule-context">
-      <div class="context-chip">
-        <div class="context-dot"></div>
-        <div>
-          <div class="chip-label">Unidade</div>
-          <div class="chip-value">${state.filial.nome}</div>
-        </div>
-      </div>
-      <div class="context-chip">
-        <div class="context-dot"></div>
-        <div>
-          <div class="chip-label">Barbeiro</div>
-          <div class="chip-value">${state.barbeiro.nome}</div>
-        </div>
-      </div>
-    </div>
-
-    ${state.barbeiro.portfolio && state.barbeiro.portfolio.length ? `
-    <div class="sched-block">
-      <div class="sched-label">Trabalhos de ${state.barbeiro.nome}</div>
-      <div class="portfolio-strip">
-        ${state.barbeiro.portfolio.map(src => `
-          <div class="portfolio-item">
-            <img src="${src}" alt="Corte">
-          </div>
-        `).join('')}
-      </div>
-    </div>
-    ` : ''}
-
-    <div class="sched-block">
-      <div class="sched-label">Serviço desejado</div>
-      <div class="services-grid">
-        ${DATA.servicos.map((s, i) => `
-          <div class="service-item${s.badge ? ' has-badge' : ''}" id="svc-${i}" onclick="selecionarServico(${i})">
-            ${s.badge ? `<span class="svc-badge">${s.badge}</span>` : ''}
-            <div class="svc-row">
-              <span class="service-name">${s.nome}</span>
-              <span class="service-price">${s.preco}</span>
+        <div class="bs-shop-head">
+          <div class="bs-shop-id">
+            <div class="bs-shop-avatar bs-shop-avatar-photo">
+              ${b.foto
+                ? `<img src="${escapeHTML(b.foto)}" alt="${escapeHTML(b.nome)}">`
+                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%;opacity:0.6"><circle cx="24" cy="17" r="9"/><path d="M6 44c0-10 8-17 18-17s18 7 18 17"/></svg>`}
+            </div>
+            <div class="bs-shop-meta">
+              <div class="bs-shop-eyebrow">Passo 03 — Marque seu horário</div>
+              <h2 class="bs-shop-name">${escapeHTML(b.nome)}</h2>
+              <div class="bs-shop-rating">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="12,2 15,9 22,9.5 17,14.5 18.5,21.5 12,18 5.5,21.5 7,14.5 2,9.5 9,9"/></svg>
+                <span>${escapeHTML((b.nota || '').replace('★','').trim() || '5.0')}</span>
+                <span class="bs-shop-sep">·</span>
+                <span class="bs-shop-specialty">${escapeHTML(b.especialidade || '')}</span>
+              </div>
             </div>
           </div>
-        `).join('')}
-      </div>
-    </div>
+          <button class="bs-shop-cta-ghost" onclick="document.getElementById('back3').click()">Trocar barbeiro</button>
+        </div>
 
-    <div class="sched-block">
-      <div class="sched-label">Escolha a data</div>
-      <div class="avail-bar" id="availBar">
-        <div class="avail-dot"></div>
-        <span id="availText">Selecione uma data</span>
-      </div>
-      <div class="days-strip" id="daysStrip"></div>
-      <div class="times-grid" id="timesGrid"></div>
-    </div>
+        ${b.portfolio && b.portfolio.length ? `
+        <div class="bs-card">
+          <div class="bs-card-title">Trabalhos de ${escapeHTML(b.nome)}</div>
+          <div class="portfolio-strip">
+            ${b.portfolio.map(src => `
+              <div class="portfolio-item">
+                <img src="${src}" alt="Corte">
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
 
-    <div id="confirmSection">${renderConfirmSection()}</div>
+        <div class="bs-card">
+          <div class="bs-card-title">Serviço desejado</div>
+          <div class="services-grid">
+            ${DATA.servicos.map((s, i) => `
+              <div class="service-item${s.badge ? ' has-badge' : ''}" id="svc-${i}" onclick="selecionarServico(${i})">
+                ${s.badge ? `<span class="svc-badge">${s.badge}</span>` : ''}
+                <div class="svc-row">
+                  <span class="service-name">${s.nome}</span>
+                  <span class="service-price">${s.preco}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="bs-card">
+          <div class="bs-card-title">Escolha a data</div>
+          <div class="avail-bar" id="availBar">
+            <div class="avail-dot"></div>
+            <span id="availText">Selecione uma data</span>
+          </div>
+          <div class="days-strip" id="daysStrip"></div>
+          <div class="times-grid" id="timesGrid"></div>
+        </div>
+
+        <div id="confirmSection">${renderConfirmSection()}</div>
+
+      </main>
+
+      <aside class="bs-side">
+        <div class="bs-side-block">
+          <h4 class="bs-side-title">Resumo do agendamento</h4>
+          <ul class="bs-summary">
+            <li><span>Unidade</span><span>${escapeHTML(f.nome)}</span></li>
+            <li><span>Barbeiro</span><span>${escapeHTML(b.nome)}</span></li>
+            <li id="sumSvc"><span>Serviço</span><span class="muted">—</span></li>
+            <li id="sumDia"><span>Data</span><span class="muted">—</span></li>
+            <li id="sumHora"><span>Horário</span><span class="muted">—</span></li>
+          </ul>
+        </div>
+
+        <div class="bs-side-block">
+          <div class="bs-side-address">
+            ${(f.endereco || '').split('\n').map(l => `<div>${escapeHTML(l)}</div>`).join('')}
+          </div>
+        </div>
+
+        <div class="bs-side-block">
+          <h4 class="bs-side-title">Precisa de ajuda?</h4>
+          <div class="bs-side-social">
+            <a href="https://wa.me/${f.whatsapp || ''}" target="_blank" rel="noopener" class="bs-social-btn" aria-label="WhatsApp">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </a>
+            <a href="https://www.instagram.com/suabarbearia" target="_blank" rel="noopener" class="bs-social-btn" aria-label="Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
 
     <footer class="step-footer">
       <div class="logo-ft">Sua<span>Barbearia</span></div>
@@ -1223,15 +1409,28 @@ function renderAgendamento() {
   applyConfirmPhoneMask()
 
   // Animações de entrada
-  reveal(document.querySelector('#scheduleContent .section-label'), 0)
-  revealStagger('#scheduleContent .schedule-context .context-chip', 60)
+  reveal(document.querySelector('#scheduleContent .bs-shop-head'), 0)
   revealStagger('#scheduleContent .services-grid .service-item', 60)
-  reveal(document.querySelector('#scheduleContent .sched-block:last-of-type'), 0, 'reveal-scale')
+  reveal(document.querySelector('#scheduleContent .bs-card:last-of-type'), 0, 'reveal-scale')
   reveal(document.getElementById('confirmSection'), 100, 'reveal-scale')
+  reveal(document.querySelector('#scheduleContent .bs-side'), 120)
 
-  // Letter reveal no título "Agendamento" + tilt nos serviços
-  setupLetterReveal('#scheduleContent .section-title')
+  // Tilt nos serviços
   attachTilt('#scheduleContent .service-item', document, 6)
+}
+
+function updateSummary(field, value) {
+  const li = document.getElementById(field)
+  if (!li) return
+  const span = li.querySelector('span:last-child')
+  if (!span) return
+  if (value) {
+    span.textContent = value
+    span.classList.remove('muted')
+  } else {
+    span.textContent = '—'
+    span.classList.add('muted')
+  }
 }
 
 function renderConfirmSection() {
@@ -1271,6 +1470,7 @@ window.selecionarServico = (i) => {
   const svc = document.getElementById(`svc-${i}`)
   if (svc) svc.classList.add('selected')
   state.servico = DATA.servicos[i]
+  updateSummary('sumSvc', `${state.servico.nome} · ${state.servico.preco}`)
 }
 
 // Estado do calendário visível (mês/ano)
@@ -1386,6 +1586,8 @@ window.selecionarDia = async (dateISO) => {
   state.dia      = dateISO
   state.diaLabel = fmtDateLabel(dateObj)
   state.horario  = null
+  updateSummary('sumDia',  state.diaLabel)
+  updateSummary('sumHora', null)
 
   const timesGrid = document.getElementById('timesGrid')
   const availText = document.getElementById('availText')
@@ -1485,6 +1687,7 @@ window.selecionarHorario = (i, h) => {
   document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'))
   btn.classList.add('selected')
   state.horario = h
+  updateSummary('sumHora', h)
 }
 
 window.confirmarAgendamento = async () => {
@@ -1853,16 +2056,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (el) applyPhoneMask(el)
   })
 
-  document.getElementById('btnAgendar').addEventListener('click', () => goToStep(1))
+  document.getElementById('btnAgendar').addEventListener('click', () => iniciarAgendamentoDireto())
   document.getElementById('back1').addEventListener('click',      () => goToStep(0))
-  document.getElementById('back2').addEventListener('click',      () => goToStep(1))
+  document.getElementById('back2').addEventListener('click',      () => goToStep(0))
   document.getElementById('back3').addEventListener('click',      () => goToStep(2))
   document.getElementById('back5')?.addEventListener('click',     () => goToStep(0))
   document.getElementById('btnReset').addEventListener('click',   resetFlow)
 
   let _tx = null, _ty = null
   document.addEventListener('touchstart', e => {
-    if (e.target.closest('.profile-photos') || e.target.closest('.days-strip')) { _tx = null; return }
+    if (e.target.closest('.bs-photos') || e.target.closest('.days-strip')) { _tx = null; return }
     _tx = e.changedTouches[0].screenX
     _ty = e.changedTouches[0].screenY
   }, { passive: true })
@@ -1871,7 +2074,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dx = e.changedTouches[0].screenX - _tx
     const dy = e.changedTouches[0].screenY - _ty
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 0 && currentStep > 0) {
-      goToStep(currentStep - 1)
+      const target = currentStep - 1 === 1 ? 0 : currentStep - 1 // pula step-1 (unidades)
+      goToStep(target)
     }
     _tx = null
   }, { passive: true })

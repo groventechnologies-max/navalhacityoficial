@@ -741,6 +741,404 @@ body {
 }
 .barber-card.selected .selected-badge { opacity: 1; }
 
+/* ─── PERFIL REDESIGN (step-2) ─── */
+#step-2 .step-content { max-width: 1300px; padding-top: 40px; padding-bottom: 80px; }
+
+.bs-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
+  align-items: start;
+}
+
+.bs-main  { min-width: 0; display: flex; flex-direction: column; gap: 28px; }
+.bs-side  { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 88px; }
+
+/* Header card: avatar + nome + rating + CTA */
+.bs-shop-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.bs-shop-id { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; }
+.bs-shop-avatar {
+  width: 64px; height: 64px;
+  border-radius: 12px;
+  background: #0f0f0f;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.bs-shop-avatar img { width: 70%; height: 70%; object-fit: contain; opacity: 0.92; }
+.bs-shop-meta { min-width: 0; }
+.bs-shop-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  color: var(--white);
+  line-height: 1.05;
+  letter-spacing: 1px;
+  margin: 0;
+}
+.bs-shop-rating {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--orange);
+  letter-spacing: 1px;
+}
+.bs-shop-cta {
+  background: var(--orange);
+  color: #000;
+  border: none;
+  padding: 12px 22px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  flex-shrink: 0;
+}
+.bs-shop-cta:hover { background: var(--orange-dim); transform: translateY(-2px); }
+
+/* Photo grid */
+.bs-photos {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: 180px 180px;
+  gap: 4px;
+}
+.bs-photo {
+  background: #141414;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.bs-photo:first-child { grid-row: span 2; }
+.bs-photo::before {
+  content: attr(data-label);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--border);
+}
+.bs-photo.has::before { display: none; }
+.bs-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Tabs */
+.bs-tabs {
+  position: relative;
+  display: flex;
+  gap: 28px;
+  padding: 4px 4px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bs-tabs::-webkit-scrollbar { display: none; }
+.bs-tab {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 14px 2px 16px;
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.bs-tab:hover { color: var(--text); }
+.bs-tab.active { color: var(--white); }
+.bs-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--orange);
+}
+
+.bs-tab-content { min-height: 220px; padding-top: 8px; }
+.bs-tab-empty {
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 1px;
+  background: var(--card);
+  border: 1px dashed var(--border);
+}
+
+/* Override do grid de barbeiros dentro do step-2 redesign */
+#step-2 .barbers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 2px;
+}
+
+/* Comodidades */
+.bs-comodidades {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 22px 24px;
+}
+.bs-comodidades-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.bs-comodidades-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  color: var(--white);
+  letter-spacing: 1px;
+  margin: 0;
+}
+.bs-comodidades-sub { font-size: 12px; color: var(--muted); letter-spacing: 1px; }
+.bs-comodidades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.bs-comodidade {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #0f0f0f;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.bs-comodidade:hover { border-color: #3a3a3a; transform: translateY(-2px); }
+.bs-comodidade-icon {
+  width: 30px; height: 30px;
+  color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+}
+.bs-comodidade-icon svg { width: 100%; height: 100%; }
+.bs-comodidade-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+
+/* Sidebar */
+.bs-side-block {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 18px 20px;
+}
+.bs-side-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  color: var(--white);
+  letter-spacing: 1px;
+  margin: 0 0 12px;
+}
+.bs-side-address { font-size: 13px; line-height: 1.6; color: var(--text); }
+.bs-side-address div + div { margin-top: 2px; color: var(--muted); font-size: 12px; }
+
+.bs-side-hours { list-style: none; padding: 0; margin: 0; }
+.bs-side-hours li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.bs-side-hours li:last-child { border-bottom: none; }
+.bs-side-hours li span:first-child { color: var(--text); }
+.bs-side-hours li span:last-child  { color: var(--muted); }
+
+.bs-side-pays { display: flex; flex-wrap: wrap; gap: 6px; }
+.bs-pay-chip {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 5px 9px;
+  background: #0f0f0f;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.bs-side-social { display: flex; gap: 8px; }
+.bs-social-btn {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: #0f0f0f;
+  border: 1px solid var(--border);
+  color: var(--white);
+  transition: border-color 0.2s, transform 0.2s;
+}
+.bs-social-btn:hover { border-color: var(--orange); transform: translateY(-2px); }
+.bs-social-btn svg { width: 18px; height: 18px; }
+
+/* Step 3 — extras reaproveitando bs-layout */
+#step-3 .step-content { max-width: 1300px; padding-top: 40px; padding-bottom: 80px; }
+
+.bs-shop-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.bs-shop-avatar-photo { width: 72px; height: 72px; }
+.bs-shop-avatar-photo img { width: 100%; height: 100%; object-fit: cover; opacity: 1; }
+.bs-shop-sep { opacity: 0.4; margin: 0 4px; }
+.bs-shop-specialty { color: var(--text); }
+
+.bs-shop-cta-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 11px 18px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+.bs-shop-cta-ghost:hover { border-color: var(--orange); color: var(--white); transform: translateY(-2px); }
+
+.bs-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 22px 24px;
+}
+.bs-card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  color: var(--white);
+  letter-spacing: 1px;
+  margin: 0 0 16px;
+}
+
+/* Resumo lateral */
+.bs-summary { list-style: none; padding: 0; margin: 0; }
+.bs-summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.bs-summary li:last-child { border-bottom: none; }
+.bs-summary li span:first-child { color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-size: 11px; }
+.bs-summary li span:last-child  { color: var(--white); text-align: right; }
+.bs-summary li span.muted        { color: var(--muted); }
+
+/* Ajustes finos dentro de bs-card no step-3 */
+#step-3 .bs-card .services-grid { margin: 0; }
+#step-3 .bs-card .days-strip    { margin: 0 -4px 16px; }
+#step-3 .bs-card .times-grid    { margin: 0; }
+#step-3 .bs-card .avail-bar     { margin-bottom: 14px; }
+#step-3 .bs-card .portfolio-strip { margin: 0; }
+#step-3 .confirm-form            { background: var(--card); }
+
+/* Responsivo */
+/* Laptop pequeno (1100-1280): reduz sidebar e fotos */
+@media (max-width: 1280px) {
+  #step-2 .step-content,
+  #step-3 .step-content { max-width: 100%; padding-left: 28px; padding-right: 28px; }
+  .bs-layout { grid-template-columns: minmax(0, 1fr) 280px; gap: 22px; }
+  .bs-photos { grid-template-rows: 160px 160px; }
+}
+
+/* Tablet landscape (sidebar embaixo do main, 2 colunas) */
+@media (max-width: 1024px) {
+  .bs-layout { grid-template-columns: 1fr; gap: 22px; }
+  .bs-side { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .bs-side-block { padding: 16px 18px; }
+  .bs-shop-name { font-size: 26px; }
+}
+
+/* Tablet portrait */
+@media (max-width: 860px) {
+  #step-2 .step-content,
+  #step-3 .step-content { padding-left: 22px; padding-right: 22px; padding-top: 28px; }
+  .bs-shop-head { padding: 16px 18px; }
+  .bs-photos {
+    grid-template-columns: 1.6fr 1fr 1fr;
+    grid-template-rows: 150px 150px;
+  }
+  #step-2 .barbers-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+}
+
+/* Celular */
+@media (max-width: 720px) {
+  .bs-side { grid-template-columns: 1fr; }
+  .bs-shop-head { flex-direction: column; align-items: stretch; gap: 14px; padding: 16px; }
+  .bs-shop-id { gap: 12px; }
+  .bs-shop-name { font-size: 24px; }
+  .bs-shop-cta,
+  .bs-shop-cta-ghost { width: 100%; text-align: center; padding: 13px 18px; }
+  .bs-shop-avatar { width: 56px; height: 56px; }
+  .bs-shop-avatar-photo { width: 60px; height: 60px; }
+  .bs-photos {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 180px 120px 120px;
+    gap: 3px;
+  }
+  .bs-photo:first-child { grid-row: span 1; grid-column: span 2; }
+  .bs-tabs { gap: 16px; }
+  .bs-tab { font-size: 12px; padding: 12px 2px 14px; letter-spacing: 1.5px; }
+  #step-2 .barbers-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .bs-card { padding: 18px 16px; }
+  .bs-card-title { font-size: 20px; }
+  .bs-comodidades { padding: 18px 16px; }
+  .bs-comodidades-title { font-size: 22px; }
+  .bs-comodidades-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bs-side-block { padding: 14px 16px; }
+  .bs-summary li span:first-child { font-size: 10px; }
+  .bs-summary li span:last-child { font-size: 13px; }
+}
+
+/* Celular pequeno (iPhone SE, Galaxy Fold etc) */
+@media (max-width: 420px) {
+  #step-2 .step-content,
+  #step-3 .step-content { padding-left: 14px; padding-right: 14px; }
+  .bs-shop-head { padding: 14px; gap: 12px; }
+  .bs-shop-name { font-size: 22px; letter-spacing: 0.5px; }
+  .bs-shop-eyebrow { font-size: 9px; letter-spacing: 3px; }
+  .bs-photos {
+    grid-template-rows: 160px 100px 100px;
+    gap: 2px;
+  }
+  .bs-tabs { gap: 14px; padding: 0 2px; }
+  .bs-tab { font-size: 11px; letter-spacing: 1px; padding: 10px 2px 12px; }
+  .bs-card { padding: 14px 12px; }
+  .bs-card-title { font-size: 18px; margin-bottom: 12px; }
+  .bs-comodidades-grid { grid-template-columns: 1fr; }
+  .bs-comodidade { padding: 12px 14px; }
+  #step-2 .barbers-grid { grid-template-columns: 1fr; }
+  .barber-photo { height: 220px; }
+  .bs-side-pays { gap: 4px; }
+  .bs-pay-chip { font-size: 10px; padding: 4px 7px; }
+}
+
 /* ─── AGENDAMENTO ─── */
 .schedule-context {
   display: flex;
@@ -1537,6 +1935,8 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
+  padding: 16px;
+  overflow-y: auto;
 }
 .login-modal-overlay.open {
   opacity: 1;
@@ -1548,9 +1948,12 @@ body {
   padding: 44px 40px;
   width: 100%;
   max-width: 420px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   position: relative;
   transform: translateY(20px);
   transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  -webkit-overflow-scrolling: touch;
 }
 .login-modal-overlay.open .login-modal {
   transform: translateY(0);
@@ -2301,4 +2704,45 @@ body {
 }
 
 /* (prefers-reduced-motion intencionalmente ignorado — ver main.js) */
+
+/* ─── MOBILE UX: tap targets, safe areas, prevenções ─── */
+
+/* Safe area iOS (notch / home indicator) */
+@supports (padding: max(0px)) {
+  .step-nav { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(32px, env(safe-area-inset-right)); }
+  .step-footer { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
+}
+
+/* Inputs evitam zoom no iOS (16px mínimo) */
+@media (max-width: 760px) {
+  input.form-input,
+  textarea.form-input,
+  select.form-input { font-size: 16px !important; }
+}
+
+/* Tap targets mínimos no celular */
+@media (hover: none) and (pointer: coarse) {
+  .nav-hamburger,
+  .nav-instagram,
+  .nav-login-btn,
+  .btn-back,
+  .login-modal-close,
+  .photo-nav,
+  .cal-nav-btn,
+  .agend-filter-btn,
+  .bs-tab,
+  .bs-social-btn { min-height: 40px; min-width: 40px; }
+
+  .barber-card,
+  .service-item,
+  .time-btn,
+  .day-btn,
+  .filial-item,
+  .bs-comodidade { min-height: 44px; }
+}
+
+/* Prevenir overflow horizontal em qualquer step */
+.step { max-width: 100vw; }
+.step-content { width: 100%; }
+img, video, iframe, svg { max-width: 100%; }
 

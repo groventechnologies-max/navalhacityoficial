@@ -595,18 +595,23 @@
     // Portfolio: lista misturada de URLs já existentes e arquivos novos a enviar
     let portfolioItems = []  // [{ url: string, file?: File }]
 
+    // DEV: bypass de auth — entra direto como admin (desliga quando voltar pro Supabase real)
+    const DEV_AUTO_ADMIN = true
+
     // ─── AUTH ─────────────────────────────────────────────
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { showDenied(); return }
+      if (!DEV_AUTO_ADMIN) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) { showDenied(); return }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
 
-      if (profile?.role !== 'admin') { showDenied(); return }
+        if (profile?.role !== 'admin') { showDenied(); return }
+      }
 
       document.getElementById('loadingScreen').style.display = 'none'
       document.getElementById('mainContent').style.display   = 'block'
@@ -962,7 +967,7 @@
 
     // ─── LOGOUT ───────────────────────────────────────────
     window.doLogout = async function() {
-      await supabase.auth.signOut()
+      if (!DEV_AUTO_ADMIN) await supabase.auth.signOut()
       if (window.pageTransitionTo) window.pageTransitionTo('/')
       else window.location.href = '/'
     }

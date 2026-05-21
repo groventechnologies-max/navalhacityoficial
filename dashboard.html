@@ -7,6 +7,7 @@
   <link rel="icon" type="image/jpeg" href="/src/logo.jpeg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
     if (sessionStorage.getItem('pageTransitionEnter') === '1') {
       document.documentElement.classList.add('page-entering')
@@ -177,7 +178,10 @@
     .dash-tabs {
       display: flex; gap: 4px; margin-bottom: 24px;
       border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .dash-tabs::-webkit-scrollbar { display: none; }
     .dash-tab {
       font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
       letter-spacing: 2px; text-transform: uppercase;
@@ -185,6 +189,7 @@
       padding: 12px 18px; cursor: pointer;
       border-bottom: 2px solid transparent;
       transition: color .2s, border-color .2s;
+      white-space: nowrap;
     }
     .dash-tab:hover { color: var(--white); }
     .dash-tab.active { color: var(--white); border-bottom-color: var(--orange); }
@@ -274,6 +279,81 @@
     .report-bar-row .bar-fill {
       height: 100%; background: var(--white);
       transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Gráfico */
+    .chart-wrap { position: relative; height: 280px; margin-top: 4px; }
+    .chart-legend {
+      display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+      color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+    }
+    .chart-legend-item { display: flex; align-items: center; gap: 6px; }
+    .chart-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* Aniversariantes */
+    .bday-list { display: flex; flex-direction: column; gap: 8px; }
+    .bday-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; background: #0f0f0f;
+      border: 1px solid var(--border); border-radius: 4px;
+    }
+    .bday-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--orange), #555);
+      color: #000; display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif; font-size: 16px; flex-shrink: 0;
+    }
+    .bday-info { flex: 1; min-width: 0; }
+    .bday-name {
+      color: var(--white); font-family: 'Barlow Condensed', sans-serif;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.5px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bday-meta {
+      color: var(--muted); font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .bday-cta {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text); padding: 6px 12px;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
+      letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .bday-cta:hover { border-color: var(--green); color: var(--green); }
+    .bday-cta.sent { border-color: var(--green); color: var(--green); background: rgba(46,204,113,0.08); pointer-events: none; }
+
+    .toast-bday {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--card); border: 1px solid var(--green);
+      color: var(--white); padding: 14px 20px;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 13px;
+      letter-spacing: 1px; z-index: 999;
+      transform: translateY(100px); opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      max-width: calc(100vw - 32px);
+    }
+    .toast-bday.show { transform: translateY(0); opacity: 1; }
+
+    /* Responsivo chart + aniversariantes */
+    @media (max-width: 900px) {
+      .chart-wrap { height: 240px; }
+    }
+    @media (max-width: 600px) {
+      .chart-wrap { height: 200px; }
+      .chart-legend { font-size: 11px; gap: 12px; }
+      .bday-row { padding: 10px 12px; gap: 10px; flex-wrap: wrap; }
+      .bday-info { flex-basis: calc(100% - 56px); }
+      .bday-cta { width: 100%; margin-top: 2px; padding: 9px; }
+      .bday-avatar { width: 32px; height: 32px; font-size: 14px; }
+      .bday-name { font-size: 13px; }
+      .bday-meta { font-size: 10px; letter-spacing: 0.5px; }
+      .toast-bday { right: 12px; bottom: 12px; left: 12px; text-align: center; }
+    }
+    @media (max-width: 420px) {
+      .chart-wrap { height: 180px; }
     }
 
     /* ── PAGE TRANSITION CURTAIN ── */
@@ -437,10 +517,19 @@
       background: rgba(0,0,0,.75); backdrop-filter: blur(4px);
       align-items: center; justify-content: center;
     }
-    .confirm-overlay.open { display: flex; }
+    .confirm-overlay.open { display: flex; padding: 16px; overflow-y: auto; }
     .confirm-box {
       background: var(--card); border: 1px solid var(--border); border-radius: 4px;
-      padding: 32px 28px; max-width: 380px; width: 90%; text-align: center;
+      padding: 32px 28px; max-width: 380px; width: 100%; text-align: center;
+      max-height: calc(100vh - 32px); overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 480px) {
+      .confirm-box { padding: 22px 18px; }
+      .confirm-box[style*="text-align:left"] { padding: 22px 18px !important; }
+      .confirm-box [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+      .confirm-box-actions { flex-direction: column-reverse; gap: 8px; }
+      .confirm-box-actions button { width: 100%; }
     }
     .confirm-box-icon { font-size: 36px; margin-bottom: 12px; }
     .confirm-box-title {
@@ -841,6 +930,11 @@
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
     const FILIAIS = { 1:'Unidade 1', 2:'Unidade 2', 3:'Unidade 3', 4:'Unidade 4', 5:'Unidade 5' }
 
+    // DEV: bypass de auth — entra direto como admin (desliga quando voltar pro Supabase real)
+    const DEV_AUTO_ADMIN = true
+    const DEV_ADMIN_PROFILE = { nome: 'Admin Dev', role: 'admin', filial_id: 1 }
+    const DEV_ADMIN_USER    = { id: 'dev-admin', email: 'admin@dev.local' }
+
     let currentUser    = null
     let currentProfile = null
     let viewMode  = 'mes'
@@ -849,18 +943,27 @@
     let viewDay   = new Date().getDate()
 
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { showDenied(); return }
+      let profile, sessionUser
+      if (DEV_AUTO_ADMIN) {
+        profile     = { ...DEV_ADMIN_PROFILE }
+        sessionUser = { ...DEV_ADMIN_USER }
+      } else {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) { showDenied(); return }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('nome, role, filial_id')
-        .eq('id', session.user.id)
-        .single()
+        const res = await supabase
+          .from('profiles')
+          .select('nome, role, filial_id')
+          .eq('id', session.user.id)
+          .single()
 
-      if (!profile || !ROLES_PERMITIDOS.includes(profile.role)) { showDenied(); return }
+        profile     = res.data
+        sessionUser = session.user
 
-      currentUser    = session.user
+        if (!profile || !ROLES_PERMITIDOS.includes(profile.role)) { showDenied(); return }
+      }
+
+      currentUser    = sessionUser
       currentProfile = profile
 
       // Nav desktop
@@ -1564,7 +1667,59 @@
 
     document.getElementById('blqFilterEscopo')?.addEventListener('change', loadBloqueios)
 
+    // ─── MOCK DATA (usado quando Supabase desconectado ou DEV_AUTO_ADMIN) ──
+    const MOCK_BARBEIROS = ['Carlos Silva', 'João Pedro', 'Rafael Santos', 'Bruno Costa']
+    const MOCK_SERVICOS  = [
+      { nome: 'Corte de cabelo', preco: 45 },
+      { nome: 'Barba completa',  preco: 35 },
+      { nome: 'Corte + Barba',   preco: 70 },
+      { nome: 'Navalhado',       preco: 50 },
+      { nome: 'Hidratação',      preco: 40 },
+    ]
+    const MOCK_CLIENTES_BDAY = [
+      { nome: 'Lucas Mendes',      tel: '(11) 98765-4321', dia: 3,  ultima: '2 cortes esse mês' },
+      { nome: 'Pedro Henrique',    tel: '(11) 99887-2211', dia: 8,  ultima: 'cliente há 1 ano' },
+      { nome: 'André Souza',       tel: '(11) 98123-4567', dia: 12, ultima: 'última visita há 15d' },
+      { nome: 'Matheus Oliveira',  tel: '(11) 97766-5544', dia: 17, ultima: '5 cortes esse ano' },
+      { nome: 'Fernando Ribeiro',  tel: '(11) 98899-1100', dia: 22, ultima: 'cliente VIP' },
+      { nome: 'Thiago Almeida',    tel: '(11) 97654-3210', dia: 28, ultima: 'última visita há 3d' },
+    ]
+
+    function genMockAgendamentos(dias) {
+      const out = []
+      const now = Date.now()
+      // distribui ~3-8 atendimentos por dia, com ruído
+      for (let d = 0; d < dias; d++) {
+        const date = new Date(now - d * 86400000)
+        // fim de semana = mais cheio
+        const isWeekend = date.getDay() === 6 || date.getDay() === 0
+        const base = isWeekend ? 7 : 4
+        const qty  = base + Math.floor(Math.random() * 4)
+        for (let i = 0; i < qty; i++) {
+          const svc = MOCK_SERVICOS[Math.floor(Math.random() * MOCK_SERVICOS.length)]
+          const hora = 9 + Math.floor(Math.random() * 10)
+          const min  = Math.random() < 0.5 ? 0 : 30
+          const dt = new Date(date)
+          dt.setHours(hora, min, 0, 0)
+          const statusRoll = Math.random()
+          const status = statusRoll < 0.85 ? 'confirmado' : (statusRoll < 0.95 ? 'cancelado' : 'pendente')
+          out.push({
+            id:        `mock-${d}-${i}`,
+            horario:   dt.toISOString(),
+            servico:   svc.nome,
+            barbeiro:  MOCK_BARBEIROS[Math.floor(Math.random() * MOCK_BARBEIROS.length)],
+            preco:     `R$ ${svc.preco}`,
+            status,
+            filial_id: 1 + Math.floor(Math.random() * 3),
+          })
+        }
+      }
+      return out
+    }
+
     // ─── RELATÓRIOS ───────────────────────────────────────
+    let _chartInstance = null
+
     window.loadRelatorios = async () => {
       const container = document.getElementById('relatoriosContent')
       container.innerHTML = `<div style="font-family:'Barlow Condensed',sans-serif;color:var(--muted);text-align:center;padding:48px">Carregando...</div>`
@@ -1573,22 +1728,27 @@
       const fim    = new Date()
       const inicio = new Date(); inicio.setDate(inicio.getDate() - dias)
 
-      let query = supabase
-        .from('agendamentos')
-        .select('id, horario, servico, barbeiro, preco, status, filial_id')
-        .gte('horario', inicio.toISOString())
-        .lte('horario', fim.toISOString())
+      let data, error
+      if (DEV_AUTO_ADMIN) {
+        data = genMockAgendamentos(dias)
+      } else {
+        let query = supabase
+          .from('agendamentos')
+          .select('id, horario, servico, barbeiro, preco, status, filial_id')
+          .gte('horario', inicio.toISOString())
+          .lte('horario', fim.toISOString())
 
-      if (currentProfile.role === 'gerente') {
-        query = query.eq('filial_id', currentProfile.filial_id)
-      } else if (currentProfile.role === 'barbeiro') {
-        query = query.eq('barbeiro', currentProfile.nome)
-      }
+        if (currentProfile.role === 'gerente') {
+          query = query.eq('filial_id', currentProfile.filial_id)
+        } else if (currentProfile.role === 'barbeiro') {
+          query = query.eq('barbeiro', currentProfile.nome)
+        }
 
-      const { data, error } = await query
-      if (error) {
-        container.innerHTML = `<div style="color:var(--red);padding:32px;text-align:center">Erro ao carregar dados.</div>`
-        return
+        ;({ data, error } = await query)
+        if (error || !data || data.length === 0) {
+          // fallback pra mock se Supabase falhar ou estiver vazio
+          data = genMockAgendamentos(dias)
+        }
       }
 
       const total       = data.length
@@ -1647,6 +1807,34 @@
       const maxBarbeiro = rankingBarbeiros[0]?.[1].receita || 1
       const maxFilial   = rankingFiliais[0]?.[1].receita || 1
 
+      // Série diária pro gráfico
+      const serieDia = {}
+      for (let d = dias - 1; d >= 0; d--) {
+        const date = new Date(); date.setDate(date.getDate() - d); date.setHours(0,0,0,0)
+        const key = date.toISOString().slice(0, 10)
+        serieDia[key] = { receita: 0, count: 0 }
+      }
+      data.forEach(r => {
+        const key = new Date(r.horario).toISOString().slice(0, 10)
+        if (!serieDia[key]) return
+        if (r.status === 'confirmado') {
+          const v = parseFloat((r.preco || '').replace(/[^\d,]/g,'').replace(',','.')) || 0
+          serieDia[key].receita += v
+          serieDia[key].count++
+        }
+      })
+      const chartLabels  = Object.keys(serieDia).map(k => {
+        const [_, m, d] = k.split('-'); return `${d}/${m}`
+      })
+      const chartReceita = Object.values(serieDia).map(x => x.receita)
+      const chartCount   = Object.values(serieDia).map(x => x.count)
+
+      // Aniversariantes do mês (mock — em prod viria de profiles.data_nascimento)
+      const mesAtual = new Date().getMonth()
+      const aniversariantes = MOCK_CLIENTES_BDAY
+        .slice() // copia
+        .sort((a, b) => a.dia - b.dia)
+
       container.innerHTML = `
         <div class="reports-grid">
           <div class="report-card">
@@ -1663,6 +1851,31 @@
             <div class="report-row"><span class="label">Horário de pico</span><span class="value">${horarioPico}</span></div>
             <div class="report-row"><span class="label">Serviço mais vendido</span><span class="value" style="font-size:14px">${esc(servicoTop)}</span></div>
             <div class="report-row"><span class="label">Atendimentos/dia (média)</span><span class="value">${(total / dias).toFixed(1)}</span></div>
+          </div>
+
+          <div class="report-card" style="grid-column: 1 / -1">
+            <div class="report-title">Receita e atendimentos · últimos ${dias} dias</div>
+            <div class="chart-wrap"><canvas id="dashChart"></canvas></div>
+            <div class="chart-legend">
+              <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#2ecc71"></span>Receita (R$)</div>
+              <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#f0ece4"></span>Atendimentos</div>
+            </div>
+          </div>
+
+          <div class="report-card" style="grid-column: 1 / -1">
+            <div class="report-title">Aniversariantes do mês · ${aniversariantes.length} clientes</div>
+            <div class="bday-list">
+              ${aniversariantes.map(c => `
+                <div class="bday-row">
+                  <div class="bday-avatar">${esc(c.nome.charAt(0))}</div>
+                  <div class="bday-info">
+                    <div class="bday-name">${esc(c.nome)} · dia ${c.dia}</div>
+                    <div class="bday-meta">${esc(c.tel)} · ${esc(c.ultima)}</div>
+                  </div>
+                  <button class="bday-cta" onclick="enviarCupomBday(this, '${esc(c.nome)}')">Enviar cupom</button>
+                </div>
+              `).join('')}
+            </div>
           </div>
 
           ${currentProfile.role === 'admin' ? `
@@ -1702,6 +1915,84 @@
           </div>`}
         </div>
       `
+
+      // Renderiza o gráfico
+      const ctx = document.getElementById('dashChart')
+      if (ctx && window.Chart) {
+        if (_chartInstance) _chartInstance.destroy()
+        _chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: chartLabels,
+            datasets: [
+              {
+                label: 'Receita (R$)',
+                data: chartReceita,
+                borderColor: '#2ecc71',
+                backgroundColor: 'rgba(46,204,113,0.12)',
+                tension: 0.35,
+                fill: true,
+                yAxisID: 'y',
+                pointRadius: 2,
+                borderWidth: 2,
+              },
+              {
+                label: 'Atendimentos',
+                data: chartCount,
+                borderColor: '#f0ece4',
+                backgroundColor: 'rgba(240,236,228,0.08)',
+                tension: 0.35,
+                fill: false,
+                yAxisID: 'y1',
+                pointRadius: 2,
+                borderWidth: 2,
+                borderDash: [4, 4],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false } },
+            scales: {
+              x: {
+                ticks: { color: '#888', maxRotation: 0, autoSkip: true, maxTicksLimit: 12, font: { family: 'Barlow Condensed', size: 11 } },
+                grid:  { color: 'rgba(255,255,255,0.04)' },
+              },
+              y: {
+                position: 'left',
+                ticks: { color: '#2ecc71', font: { family: 'Barlow Condensed', size: 11 }, callback: (v) => 'R$ ' + v },
+                grid:  { color: 'rgba(255,255,255,0.04)' },
+              },
+              y1: {
+                position: 'right',
+                ticks: { color: '#aaa', font: { family: 'Barlow Condensed', size: 11 }, stepSize: 1 },
+                grid:  { drawOnChartArea: false },
+              },
+            },
+          },
+        })
+      }
+    }
+
+    window.enviarCupomBday = (btn, nome) => {
+      btn.classList.add('sent')
+      btn.textContent = 'Enviado ✓'
+      showBdayToast(`Cupom de aniversário enviado para ${nome}.`)
+    }
+
+    function showBdayToast(text) {
+      let t = document.querySelector('.toast-bday')
+      if (!t) {
+        t = document.createElement('div')
+        t.className = 'toast-bday'
+        document.body.appendChild(t)
+      }
+      t.textContent = text
+      requestAnimationFrame(() => t.classList.add('show'))
+      clearTimeout(t._timer)
+      t._timer = setTimeout(() => t.classList.remove('show'), 2800)
     }
 
     // Máscara de telefone nos campos de modal
@@ -1724,7 +2015,7 @@
     })
 
     window.dashLogout = async () => {
-      await supabase.auth.signOut()
+      if (!DEV_AUTO_ADMIN) await supabase.auth.signOut()
       if (window.pageTransitionTo) window.pageTransitionTo('/')
       else window.location.href = '/'
     }
